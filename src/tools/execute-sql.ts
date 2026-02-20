@@ -64,8 +64,8 @@ export function createExecuteSqlToolHandler(sourceId?: string) {
       const registry = getToolRegistry();
       const toolConfig = registry.getBuiltinToolConfig(BUILTIN_TOOL_EXECUTE_SQL, actualSourceId);
 
-      // Check if SQL is allowed based on readonly mode (per-tool)
-      const isReadonly = toolConfig?.readonly === true;
+      // Check if SQL is allowed based on readonly mode (per-tool); default is read-only (omit === true)
+      const isReadonly = toolConfig?.readonly !== false;
       if (isReadonly && !areAllStatementsReadOnly(sql, connector.id)) {
         errorMessage = `Read-only mode is enabled. Only the following SQL operations are allowed: ${allowedKeywords[connector.id]?.join(", ") || "none"}`;
         success = false;

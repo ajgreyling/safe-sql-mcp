@@ -180,8 +180,8 @@ export function createCustomToolHandler(toolConfig: ToolConfig) {
         maxRows: toolConfig.max_rows,
       };
 
-      // 5. Check if SQL is allowed based on readonly mode
-      const isReadonly = executeOptions.readonly === true;
+      // 5. Check if SQL is allowed based on readonly mode (default is read-only when omitted)
+      const isReadonly = executeOptions.readonly !== false;
       if (isReadonly && !isAllowedInReadonlyMode(toolConfig.statement, connector.id)) {
         errorMessage = createReadonlyViolationMessage(toolConfig.name, toolConfig.source, connector.id);
         success = false;

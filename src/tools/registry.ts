@@ -184,9 +184,9 @@ export class ToolRegistry {
     for (const source of config.sources) {
       if (!registry.has(source.id)) {
         const defaultTools: ToolConfig[] = BUILTIN_TOOLS.map((name) => {
-          // Create properly typed tool configs based on the tool name
+          // Create properly typed tool configs based on the tool name (default: read-only)
           if (name === 'execute_sql') {
-            return { name: 'execute_sql', source: source.id } satisfies ExecuteSqlToolConfig;
+            return { name: 'execute_sql', source: source.id, readonly: true } satisfies ExecuteSqlToolConfig;
           } else {
             return { name: 'search_objects', source: source.id } satisfies SearchObjectsToolConfig;
           }

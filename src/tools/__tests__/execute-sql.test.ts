@@ -93,7 +93,8 @@ describe('execute-sql tool', () => {
     });
   });
 
-  describe('read-only mode enforcement', () => {
+  describe('read-only mode enforcement (destructive SQL not passed for execution)', () => {
+    // Ensures UPDATE, DELETE, INSERT, and other write operations are never sent to the connector when readonly
     beforeEach(() => {
       // Set per-source readonly mode via tool registry (simulates TOML config)
       mockGetToolRegistry.mockReturnValue({
@@ -128,6 +129,7 @@ describe('execute-sql tool', () => {
       ['INSERT', "INSERT INTO users (name) VALUES ('test')"],
       ['UPDATE', "UPDATE users SET name = 'x' WHERE id = 1"],
       ['DELETE', "DELETE FROM users WHERE id = 1"],
+      ['MERGE', "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET t.x = s.x"],
       ['DROP', "DROP TABLE users"],
       ['CREATE', "CREATE TABLE test (id INT)"],
       ['ALTER', "ALTER TABLE users ADD COLUMN email VARCHAR(255)"],
@@ -142,6 +144,22 @@ describe('execute-sql tool', () => {
       expect(mockConnector.executeSQL).not.toHaveBeenCalled();
     });
 
+    it('should not pass any destructive statement to connector for execution', async () => {
+      const destructiveStatements = [
+        "INSERT INTO users (name) VALUES ('test')",
+        "UPDATE users SET name = 'x' WHERE id = 1",
+        "DELETE FROM users WHERE id = 1",
+      ];
+      const handler = createExecuteSqlToolHandler('test_source');
+      for (const sql of destructiveStatements) {
+        vi.mocked(mockConnector.executeSQL).mockClear();
+        const result = await handler({ sql }, null);
+        expect(result.isError).toBe(true);
+        expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
+        expect(mockConnector.executeSQL).not.toHaveBeenCalled();
+      }
+    });
+
     it('should reject multi-statement with any write operation', async () => {
       const sql = "SELECT * FROM users; INSERT INTO users (name) VALUES ('test');";
       const handler = createExecuteSqlToolHandler('test_source');
@@ -154,14 +172,11 @@ describe('execute-sql tool', () => {
   });
 
   describe('readonly per-source isolation', () => {
-    // Verifies readonly is enforced per-source from tool registry, not globally
+    // Verifies readonly is enforced per-source from tool registry; default (undefined) is read-only
 
-    it.each([
-      ['readonly: false', { readonly: false }],
-      ['readonly: undefined', {}],
-    ])('should allow writes when %s', async (_, toolConfig) => {
+    it('should allow writes only when readonly: false', async () => {
       mockGetToolRegistry.mockReturnValue({
-        getBuiltinToolConfig: vi.fn().mockReturnValue(toolConfig),
+        getBuiltinToolConfig: vi.fn().mockReturnValue({ readonly: false }),
       } as any);
       const mockResult: SQLResult = { rows: [], rowCount: 0 };
       vi.mocked(mockConnector.executeSQL).mockResolvedValue(mockResult);
@@ -171,6 +186,19 @@ describe('execute-sql tool', () => {
 
       expect(parseToolResponse(result).success).toBe(true);
       expect(mockConnector.executeSQL).toHaveBeenCalled();
+    });
+
+    it('should reject writes when readonly is undefined (default read-only)', async () => {
+      mockGetToolRegistry.mockReturnValue({
+        getBuiltinToolConfig: vi.fn().mockReturnValue({}),
+      } as any);
+
+      const handler = createExecuteSqlToolHandler('test_source');
+      const result = await handler({ sql: "INSERT INTO users (name) VALUES ('test')" }, null);
+
+      expect(result.isError).toBe(true);
+      expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
+      expect(mockConnector.executeSQL).not.toHaveBeenCalled();
     });
 
     it('should enforce readonly even with other options set', async () => {

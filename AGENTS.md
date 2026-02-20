@@ -8,6 +8,8 @@ This codebase is the **dbhub-schema** fork ([github.com/ajgreyling/dbhub-schema]
 
 DBHub is a zero-dependency, token efficient database MCP server implementing the Model Context Protocol (MCP) server interface. This lightweight server bridges MCP-compatible clients (Claude Desktop, Claude Code, Cursor) with various database systems.
 
+**The server is primarily meant for read-only operations.** By default, only read-only SQL is allowed. The `--destructive` flag (or TOML `readonly = false`) should be used with extreme caution and only when necessary. **Do not use `--destructive` in production, ever.**
+
 ## Commands
 
 - Build: `pnpm run build` - Compiles TypeScript to JavaScript using tsup
@@ -90,7 +92,7 @@ DBHub supports three configuration methods (in priority order):
   user = "root"
   password = "secret"
 
-  # Tool configuration (readonly, max_rows are tool-level settings)
+  # Tool configuration: readonly is the default; set readonly = false only to allow writes (extreme caution, never in production)
   [[tools]]
   name = "execute_sql"
   source = "prod_pg"
@@ -103,7 +105,7 @@ DBHub supports three configuration methods (in priority order):
   - `src/config/__tests__/toml-loader.test.ts`: Comprehensive test suite
 - Features:
   - Per-source settings: SSH tunnels, timeouts, SSL configuration
-  - Per-tool settings: `readonly`, `max_rows` (configured in `[[tools]]` section, not `[[sources]]`)
+  - Per-tool settings: `readonly`, `max_rows` (configured in `[[tools]]` section, not `[[sources]]`). Read-only is the default; set `readonly = false` only to allow writes (use with extreme caution, never in production).
   - Custom tools: Define reusable, parameterized SQL operations
   - Path expansion for `~/` in file paths
   - Automatic password redaction in logs
@@ -125,7 +127,7 @@ DBHub supports three configuration methods (in priority order):
 - `--port`: HTTP server port (default: 8080)
 - `--config`: Path to TOML configuration file
 - `--demo`: Use bundled SQLite employee database
-- `--readonly`: Restrict to read-only SQL operations (deprecated - use TOML configuration instead)
+- `--destructive`: Allow destructive (write) operations for execute_sql in single-DSN mode. Use with **extreme caution** and only in non-production environments. **Do not use `--destructive` in production, ever.** Without this flag, only read-only SQL is allowed (read-only is the default). For multi-source, use TOML `[[tools]]` with `readonly = false` per tool.
 - `--max-rows`: Limit rows returned from SELECT queries (deprecated - use TOML configuration instead)
 - SSH tunnel options: `--ssh-host`, `--ssh-port`, `--ssh-user`, `--ssh-password`, `--ssh-key`, `--ssh-passphrase`
 - Documentation: https://dbhub.ai/config/command-line

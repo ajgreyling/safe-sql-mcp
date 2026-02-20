@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { homedir } from "os";
 import type { SSHTunnelConfig } from "../types/ssh.js";
 import { parseSSHConfig, looksLikeSSHAlias } from "../utils/ssh-config-parser.js";
-import type { SourceConfig } from "../types/config.js";
+import type { SourceConfig, ToolConfig } from "../types/config.js";
 import { loadTomlConfig } from "./toml-loader.js";
 import { parseConnectionInfoFromDSN } from "../utils/dsn-obfuscate.js";
 import { SafeURL } from "../utils/safe-url.js";
@@ -27,20 +27,6 @@ export function parseCommandLineArgs() {
       const key = parts[0];
 
       // Fail immediately on deprecated flags
-      if (key === "readonly") {
-        console.error("\nERROR: --readonly flag is no longer supported.");
-        console.error("Use dbhub.toml with [[tools]] configuration instead:\n");
-        console.error("  [[sources]]");
-        console.error("  id = \"default\"");
-        console.error("  dsn = \"...\"\n");
-        console.error("  [[tools]]");
-        console.error("  name = \"execute_sql\"");
-        console.error("  source = \"default\"");
-        console.error("  readonly = true\n");
-        console.error("See https://dbhub.ai/tools/execute-sql#read-only-mode for details.\n");
-        process.exit(1);
-      }
-
       if (key === "max-rows") {
         console.error("\nERROR: --max-rows flag is no longer supported.");
         console.error("Use dbhub.toml with [[tools]] configuration instead:\n");
@@ -151,6 +137,15 @@ export function isDemoMode(): boolean {
   return args.demo === "true";
 }
 
+/**
+ * Resolve destructive (write) mode from command line (--destructive or --destructive=true).
+ * When true, execute_sql allows write operations in single-DSN mode. Default is read-only.
+ */
+export function resolveDestructive(): boolean {
+  const args = parseCommandLineArgs();
+  const v = args.destructive;
+  return v === "true" || v === "1";
+}
 
 /**
  * Build DSN from individual environment variables
@@ -540,8 +535,7 @@ export async function resolveSourceConfigs(): Promise<{ sources: SourceConfig[];
           "Either remove the --id flag or use command-line DSN configuration instead."
         );
       }
-      // Note: --readonly flag is deprecated but no longer blocks TOML usage
-      // The warning is shown in isReadOnlyMode() function
+      // Note: default is read-only; --destructive only affects single-DSN mode; TOML uses [[tools]] readonly
       return tomlConfig;
     }
   }
@@ -629,9 +623,16 @@ export async function resolveSourceConfigs(): Promise<{ sources: SourceConfig[];
       source.init_script = getSqliteInMemorySetupSql();
     }
 
+    // Default is read-only; only --destructive allows writes. Always pass explicit tools.
+    const allowWrites = resolveDestructive();
+    const tools: ToolConfig[] = [
+      { name: "execute_sql", source: sourceId, readonly: !allowWrites },
+      { name: "search_objects", source: sourceId },
+    ];
+
     return {
       sources: [source],
-      tools: [],
+      tools,
       source: dsnResult.isDemo ? "demo mode" : dsnResult.source,
     };
   }

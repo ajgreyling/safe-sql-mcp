@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { buildDSNFromEnvParams, resolveDSN, resolveId, resolveSchema } from '../env.js';
+import { buildDSNFromEnvParams, resolveDSN, resolveId, resolveDestructive, resolveSchema } from '../env.js';
 
 // Mock toml-loader to prevent it from loading dbhub.toml during tests
 vi.mock('../toml-loader.js', () => ({
@@ -337,6 +337,33 @@ describe('Environment Configuration Tests', () => {
     });
   });
 
+  describe('resolveDestructive', () => {
+    it('should return true for --destructive flag', () => {
+      process.argv = ['node', 'script.js', '--destructive'];
+      expect(resolveDestructive()).toBe(true);
+    });
+
+    it('should return true for --destructive=true', () => {
+      process.argv = ['node', 'script.js', '--destructive=true'];
+      expect(resolveDestructive()).toBe(true);
+    });
+
+    it('should return true for --destructive 1', () => {
+      process.argv = ['node', 'script.js', '--destructive', '1'];
+      expect(resolveDestructive()).toBe(true);
+    });
+
+    it('should return false when --destructive is not set', () => {
+      process.argv = ['node', 'script.js', '--dsn=postgres://localhost/db'];
+      expect(resolveDestructive()).toBe(false);
+    });
+
+    it('should return false for --destructive=false', () => {
+      process.argv = ['node', 'script.js', '--destructive=false'];
+      expect(resolveDestructive()).toBe(false);
+    });
+  });
+
   describe('resolveSourceConfigs with special character passwords', () => {
     it('should parse DSN with special characters via SafeURL', async () => {
       // Test that command line DSN with special characters in password is parsed correctly
@@ -349,6 +376,34 @@ describe('Environment Configuration Tests', () => {
       expect(result!.sources).toHaveLength(1);
       expect(result!.sources[0].type).toBe('postgres');
       expect(result!.sources[0].dsn).toBe('postgres://user:my@pass:word@localhost:5432/testdb');
+    });
+  });
+
+  describe('resolveSourceConfigs with --destructive', () => {
+    it('should include execute_sql with readonly false when --destructive is set', async () => {
+      process.argv = ['node', 'script.js', '--dsn=postgres://u:p@localhost:5432/db', '--destructive'];
+
+      const result = await import('../env.js').then(m => m.resolveSourceConfigs());
+
+      expect(result).not.toBeNull();
+      expect(result!.tools).toHaveLength(2);
+      const executeSql = result!.tools!.find((t) => t.name === 'execute_sql');
+      expect(executeSql).toBeDefined();
+      expect(executeSql!.readonly).toBe(false);
+      expect(result!.tools!.find((t) => t.name === 'search_objects')).toBeDefined();
+    });
+
+    it('should include execute_sql with readonly true by default (single-DSN)', async () => {
+      process.argv = ['node', 'script.js', '--dsn=postgres://u:p@localhost:5432/db'];
+
+      const result = await import('../env.js').then(m => m.resolveSourceConfigs());
+
+      expect(result).not.toBeNull();
+      expect(result!.tools).toHaveLength(2);
+      const executeSql = result!.tools!.find((t) => t.name === 'execute_sql');
+      expect(executeSql).toBeDefined();
+      expect(executeSql!.readonly).toBe(true);
+      expect(result!.tools!.find((t) => t.name === 'search_objects')).toBeDefined();
     });
   });
 

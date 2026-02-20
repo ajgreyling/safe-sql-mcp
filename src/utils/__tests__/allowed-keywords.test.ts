@@ -26,6 +26,14 @@ describe("isReadOnlySQL", () => {
     it("should identify DELETE as not read-only", () => {
       expect(isReadOnlySQL("DELETE FROM users", "postgres")).toBe(false);
     });
+
+    it("should identify MERGE as not read-only", () => {
+      expect(isReadOnlySQL("MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET t.x = 1", "postgres")).toBe(false);
+    });
+
+    it("should identify REPLACE as not read-only for MySQL", () => {
+      expect(isReadOnlySQL("REPLACE INTO users (id, name) VALUES (1, 'x')", "mysql")).toBe(false);
+    });
   });
 
   describe("comment handling", () => {

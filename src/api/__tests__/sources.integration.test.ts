@@ -25,7 +25,7 @@ describe('Data Sources API Integration Tests', () => {
     // This fixture provides 3 SQLite sources with different execution options:
     // - readonly_limited: readonly=true, max_rows=100
     // - writable_limited: readonly=false, max_rows=500
-    // - writable_unlimited: readonly=false, no max_rows
+    // - writable_unlimited: default tools (readonly=true), no max_rows
     manager = await setupManagerWithFixture(FIXTURES.READONLY_MAXROWS);
 
     // Initialize ToolRegistry with fixture config
@@ -103,9 +103,9 @@ describe('Data Sources API Integration Tests', () => {
       expect(secondExecuteSql?.readonly).toBe(false);
       expect(secondExecuteSql?.max_rows).toBe(500);
 
-      // Third source has execute_sql tool with no explicit settings
+      // Third source gets default tools (read-only by default)
       const thirdExecuteSql = sources[2].tools.find(t => t.name.startsWith('execute_sql'));
-      expect(thirdExecuteSql?.readonly).toBeUndefined();
+      expect(thirdExecuteSql?.readonly).toBe(true);
       expect(thirdExecuteSql?.max_rows).toBeUndefined();
     });
 

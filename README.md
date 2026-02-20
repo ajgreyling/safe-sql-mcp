@@ -33,13 +33,15 @@ git remote set-url origin https://github.com/ajgreyling/dbhub-schema.git
                  MCP Clients           MCP Server             Databases
 ```
 
-dbhub-schema is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema:
+dbhub-schema is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema.
+
+**It is primarily meant for read-only operations.** By default, only read-only SQL (SELECT, WITH, EXPLAIN, etc.) is allowed. Use `--destructive` with extreme caution and only in non-production environments—**do not use `--destructive` in production, ever.**
 
 - **Local Development First**: Zero dependency, token efficient with just two MCP tools to maximize context window
 - **Multi-Database**: PostgreSQL, MySQL, MariaDB, SQL Server, and SQLite through a single interface
 - **Multi-Connection**: Connect to multiple databases simultaneously with TOML configuration
 - **Default schema**: Use `--schema` (or TOML `schema = "..."`) so PostgreSQL uses that schema for `execute_sql` and `search_objects` is restricted to it (see below)
-- **Guardrails**: Read-only mode, row limiting, and query timeout to prevent runaway operations
+- **Guardrails**: Read-only by default, row limiting, and query timeout to prevent runaway operations
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
 ## Supported Databases
@@ -94,6 +96,12 @@ schema = "my_app_schema"
 ```
 
 Full DBHub docs (including TOML and command-line options) apply; see [dbhub.ai](https://dbhub.ai) and [Command-Line Options](https://dbhub.ai/config/command-line).
+
+### Read-only (default) and allowing writes
+
+- **Default:** Only read-only SQL (SELECT, WITH, EXPLAIN, SHOW, etc.) is allowed. No flag or option is needed for read-only.
+- **CLI (single-DSN):** To allow write operations, pass `--destructive`. Use with **extreme caution** and only outside production. **Do not use `--destructive` in production, ever.**
+- **TOML (multi-source):** Set `readonly = false` on the relevant tool in `[[tools]]` to allow writes for that source. Same caution applies; never use for production.
 
 ## Workbench
 

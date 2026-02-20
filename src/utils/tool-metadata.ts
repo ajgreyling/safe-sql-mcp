@@ -106,15 +106,15 @@ export function getExecuteSqlMetadata(sourceId: string): ToolMetadata {
     ? `Execute SQL (${dbType})`
     : `Execute SQL on ${sourceId} (${dbType})`;
 
-  // Determine description with more context
-  const readonlyNote = executeOptions.readonly ? " [READ-ONLY MODE]" : "";
+  // Determine description with more context (default is read-only: show note when not explicitly writable)
+  const isReadonly = executeOptions.readonly !== false;
+  const readonlyNote = isReadonly ? " [READ-ONLY MODE]" : "";
   const maxRowsNote = executeOptions.maxRows ? ` (limited to ${executeOptions.maxRows} rows)` : "";
   const description = isSingleSource
     ? `Execute SQL queries on the ${dbType} database${readonlyNote}${maxRowsNote}`
     : `Execute SQL queries on the '${sourceId}' ${dbType} database${readonlyNote}${maxRowsNote}`;
 
   // Build annotations object with all standard MCP hints
-  const isReadonly = executeOptions.readonly === true;
   const annotations = {
     title,
     readOnlyHint: isReadonly,
