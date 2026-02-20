@@ -4,7 +4,7 @@
   "fonts": {
     "family": "DM Sans"
   },
-  "name": "DBHub, Minimal Database MCP Server",
+  "name": "dbhub-schema, Database MCP Server (fork)",
   "colors": {
     "primary": "#335DFF",
     "light": "#E8ECFF",
@@ -57,12 +57,12 @@
   "navbar": {
     "primary": {
       "type": "github",
-      "href": "https://github.com/bytebase/dbhub"
+      "href": "https://github.com/ajgreyling/dbhub-schema"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/bytebase/dbhub",
+      "github": "https://github.com/ajgreyling/dbhub-schema",
       "x": "https://x.com/Bytebase"
     }
   },
@@ -76,7 +76,7 @@
   },
   "seo": {
     "metatags": {
-      "canonical": "https://dbhub.ai"
+      "canonical": "https://github.com/ajgreyling/dbhub-schema"
     }
   },
   "integrations": {

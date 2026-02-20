@@ -49,10 +49,10 @@ Start DBHub:
 
 ```bash
 # Automatically loads ./dbhub.toml
-npx @bytebase/dbhub@latest --transport http --port 8080
+npx dbhub-schema --transport http --port 8080
 
 # Or specify custom location
-npx @bytebase/dbhub@latest --config=/path/to/config.toml
+npx dbhub-schema --config=/path/to/config.toml
 ```
 
 ## Source Options
@@ -140,6 +140,22 @@ Sources define database connections. Each source represents a database that DBHu
       ```
     </Tab>
   </Tabs>
+</ParamField>
+
+### schema
+
+<ParamField path="schema" type="string">
+  Default schema for this source. (dbhub-schema fork.) Same behavior as the [`--schema`](/config/command-line#--schema) command-line flag.
+
+  - **PostgreSQL**: Sets the connection `search_path` so `execute_sql` runs in that schema by default.
+  - **All databases**: `search_objects` is restricted to this schema unless the tool is called with an explicit `schema` argument.
+
+  ```toml
+  [[sources]]
+  id = "production"
+  dsn = "postgres://user:pass@localhost:5432/mydb"
+  schema = "my_app_schema"
+  ```
 </ParamField>
 
 ### connection_timeout

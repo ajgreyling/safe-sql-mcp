@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.bytebase/dbhub",
-  "title": "DBHub",
-  "description": "Minimal, token-efficient Database MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB",
+  "name": "io.github.ajgreyling/dbhub-schema",
+  "title": "dbhub-schema",
+  "description": "Database MCP Server (fork of DBHub) with default-schema support for PostgreSQL and multi-database setups.",
   "repository": {
-    "url": "https://github.com/bytebase/dbhub",
+    "url": "https://github.com/ajgreyling/dbhub-schema",
     "source": "github"
   },
-  "version": "0.15.1",
+  "version": "0.16.1",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@bytebase/dbhub",
-      "version": "0.15.1",
+      "identifier": "dbhub-schema",
+      "version": "0.16.1",
       "transport": {
         "type": "stdio"
       },
@@ -128,6 +128,13 @@
           "isRequired": false,
           "format": "string",
           "isSecret": true
+        },
+        {
+          "name": "SCHEMA",
+          "description": "Default schema (PostgreSQL: sets search_path; filters search_objects)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
         }
       ]
     }

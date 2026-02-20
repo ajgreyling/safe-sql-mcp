@@ -1,16 +1,16 @@
 {
-  "name": "dbhub",
+  "name": "dbhub-schema",
   "version": "0.16.1",
-  "mcpName": "io.github.bytebase/dbhub",
-  "description": "Minimal, token-efficient Database MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB",
+  "mcpName": "io.github.ajgreyling/dbhub-schema",
+  "description": "Minimal, token-efficient Database MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB. Fork of DBHub with default-schema support.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bytebase/dbhub.git"
+    "url": "https://github.com/ajgreyling/dbhub-schema.git"
   },
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "dbhub": "dist/index.js"
+    "dbhub-schema": "dist/index.js"
   },
   "files": [
     "dist",
@@ -30,7 +30,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
-    "test:integration": "vitest run --project integration"
+    "test:integration": "vitest run --project integration",
+    "release": "pnpm run build && npm publish"
   },
   "keywords": [],
   "author": "",
