@@ -99,7 +99,9 @@ export function loadEnvFiles(): string | null {
 
   // Try to load the first env file found from the prioritized locations
   for (const envPath of envPaths) {
-    console.error(`Checking for env file: ${envPath}`);
+    if (isDevelopment) {
+      console.error(`Checking for env file: ${envPath}`);
+    }
     if (fs.existsSync(envPath)) {
       dotenv.config({ path: envPath });
 
@@ -471,16 +473,16 @@ export function resolveSSHConfig(): { config: SSHTunnelConfig; source: string } 
   // SSH Private Key (optional)
   if (args["ssh-key"]) {
     config.privateKey = args["ssh-key"];
-    // Expand ~ to home directory
+    // Expand ~ to home directory (homedir() works on all platforms; HOME may be unset on Windows)
     if (config.privateKey.startsWith("~/")) {
-      config.privateKey = path.join(process.env.HOME || "", config.privateKey.substring(2));
+      config.privateKey = path.join(homedir(), config.privateKey.substring(2));
     }
     sources.push("ssh-key from command line");
   } else if (process.env.SSH_KEY) {
     config.privateKey = process.env.SSH_KEY;
-    // Expand ~ to home directory
+    // Expand ~ to home directory (homedir() works on all platforms; HOME may be unset on Windows)
     if (config.privateKey.startsWith("~/")) {
-      config.privateKey = path.join(process.env.HOME || "", config.privateKey.substring(2));
+      config.privateKey = path.join(homedir(), config.privateKey.substring(2));
     }
     sources.push("SSH_KEY from environment");
   }

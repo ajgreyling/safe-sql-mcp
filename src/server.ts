@@ -19,13 +19,21 @@ import { getToolsForSource } from "./utils/tool-metadata.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load package.json to get version
-const packageJsonPath = path.join(__dirname, "..", "package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+// Load package.json to get version (robust for both source and published package)
+let SERVER_VERSION = "0.0.0";
+try {
+  const packageJsonPath = path.join(__dirname, "..", "package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+  if (typeof packageJson.version === "string") {
+    SERVER_VERSION = packageJson.version;
+  }
+} catch {
+  // When package.json is missing (e.g. unusual install layout), server still starts
+}
 
 // Server info
 export const SERVER_NAME = "DBHub MCP Server";
-export const SERVER_VERSION = packageJson.version;
+export { SERVER_VERSION };
 
 /**
  * Generate ASCII art banner with version information

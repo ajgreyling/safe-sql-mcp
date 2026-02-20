@@ -1,6 +1,6 @@
 {
   "name": "dbhub-schema",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "mcpName": "io.github.ajgreyling/dbhub-schema",
   "description": "Minimal, token-efficient Database MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB. Fork of DBHub with default-schema support.",
   "repository": {
