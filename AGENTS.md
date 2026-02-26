@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This codebase is the **dbhub-schema** fork ([github.com/ajgreyling/dbhub-schema](https://github.com/ajgreyling/dbhub-schema)) of DBHub; it keeps internal names (e.g. `dbhub.toml`) for upstream compatibility and adds `--schema` / default schema support.
+This codebase is the **safe-sql-mcp** fork ([github.com/ajgreyling/safe-sql-mcp](https://github.com/ajgreyling/safe-sql-mcp)) of DBHub; it keeps internal names (e.g. `dbhub.toml`) for upstream compatibility and adds `--schema` / default schema support.
 
 # DBHub Development Guidelines
 

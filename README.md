@@ -1,14 +1,14 @@
-# dbhub-schema
+# safe-sql-mcp
 
-**dbhub-schema** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). It keeps the same behavior and internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups.
+**safe-sql-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). It keeps the same behavior and internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups.
 
 - **Original project:** [github.com/bytebase/dbhub](https://github.com/bytebase/dbhub)
-- **This fork:** [github.com/ajgreyling/dbhub-schema](https://github.com/ajgreyling/dbhub-schema)
+- **This fork:** [github.com/ajgreyling/safe-sql-mcp](https://github.com/ajgreyling/safe-sql-mcp)
 
 To point your clone at this fork:
 
 ```bash
-git remote set-url origin https://github.com/ajgreyling/dbhub-schema.git
+git remote set-url origin https://github.com/ajgreyling/safe-sql-mcp.git
 ```
 
 <p align="center">
@@ -25,7 +25,7 @@ git remote set-url origin https://github.com/ajgreyling/dbhub-schema.git
             +------------------+    +--------------+    +------------------+
             |                  |    |              |    |                  |
             |  Claude Desktop  +--->+              +--->+    PostgreSQL    |
-            |  Claude Code     +--->+   dbhub-schema     +--->+    SQL Server    |
+            |  Claude Code     +--->+   safe-sql-mcp     +--->+    SQL Server    |
             |  Cursor          +--->+  (DBHub fork)+--->+    SQLite        |
             |  VS Code         +--->+              +--->+    MySQL         |
             |  Copilot CLI     +--->+              +--->+    MariaDB       |
@@ -33,7 +33,7 @@ git remote set-url origin https://github.com/ajgreyling/dbhub-schema.git
                  MCP Clients           MCP Server             Databases
 ```
 
-dbhub-schema is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema.
+safe-sql-mcp is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema.
 
 **It is primarily meant for read-only operations.** By default, only read-only SQL (SELECT, WITH, EXPLAIN, etc.) is allowed. Use `--destructive` with extreme caution and only in non-production environments—**do not use `--destructive` in production, ever.**
 
@@ -67,7 +67,7 @@ When you set a default schema (via `--schema`, the `SCHEMA` environment variable
 {
   "command": "npx",
   "args": [
-    "dbhub-schema",
+    "safe-sql-mcp",
     "--transport",
     "stdio",
     "--dsn",
@@ -105,7 +105,7 @@ Full DBHub docs (including TOML and command-line options) apply; see [dbhub.ai](
 
 ## Workbench
 
-dbhub-schema includes the same [built-in web interface](https://dbhub.ai/workbench/overview) as DBHub for interacting with your database tools.
+safe-sql-mcp includes the same [built-in web interface](https://dbhub.ai/workbench/overview) as DBHub for interacting with your database tools.
 
 ![workbench](https://raw.githubusercontent.com/bytebase/dbhub/main/docs/images/workbench/workbench.webp)
 
@@ -117,19 +117,19 @@ dbhub-schema includes the same [built-in web interface](https://dbhub.ai/workben
 
 ```bash
 pnpm install && pnpm build
-npx dbhub-schema --transport http --port 8080 --dsn "postgres://user:password@localhost:5432/dbname?sslmode=disable"
+npx safe-sql-mcp --transport http --port 8080 --dsn "postgres://user:password@localhost:5432/dbname?sslmode=disable"
 ```
 
 With a default schema:
 
 ```bash
-npx dbhub-schema --transport stdio --dsn "postgres://user:password@localhost:5432/dbname" --schema "public"
+npx safe-sql-mcp --transport stdio --dsn "postgres://user:password@localhost:5432/dbname" --schema "public"
 ```
 
 **Demo mode:**
 
 ```bash
-npx dbhub-schema --transport http --port 8080 --demo
+npx safe-sql-mcp --transport http --port 8080 --demo
 ```
 
 See [Command-Line Options](https://dbhub.ai/config/command-line) for all parameters.

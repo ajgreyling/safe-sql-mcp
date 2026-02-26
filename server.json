@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.ajgreyling/dbhub-schema",
-  "title": "dbhub-schema",
+  "name": "io.github.ajgreyling/safe-sql-mcp",
+  "title": "safe-sql-mcp",
   "description": "Database MCP Server (fork of DBHub) with default-schema support for PostgreSQL and multi-database setups.",
   "repository": {
-    "url": "https://github.com/ajgreyling/dbhub-schema",
+    "url": "https://github.com/ajgreyling/safe-sql-mcp",
     "source": "github"
   },
   "version": "0.16.1",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "dbhub-schema",
+      "identifier": "safe-sql-mcp",
       "version": "0.16.1",
       "transport": {
         "type": "stdio"

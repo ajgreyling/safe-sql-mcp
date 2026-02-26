@@ -4,8 +4,8 @@ info:
   description: RESTful API for managing and inspecting database data sources
   version: 1.0.0
   contact:
-    name: dbhub-schema
-    url: https://github.com/ajgreyling/dbhub-schema
+    name: safe-sql-mcp
+    url: https://github.com/ajgreyling/safe-sql-mcp
 
 servers:
   - url: http://localhost:8080

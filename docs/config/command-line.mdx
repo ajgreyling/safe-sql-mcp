@@ -33,10 +33,10 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   ```bash
   # stdio (default) - for Claude Desktop, Claude Code, Cursor
   # No HTTP server started
-  npx dbhub-schema --transport stdio --dsn "..."
+  npx safe-sql-mcp --transport stdio --dsn "..."
 
   # http - for web clients, workbench, and remote access
-  npx dbhub-schema --transport http --port 8080 --dsn "..."
+  npx safe-sql-mcp --transport http --port 8080 --dsn "..."
   ```
 </ParamField>
 
@@ -46,7 +46,7 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   HTTP server port. Only used when `--transport=http`. Ignored for stdio transport.
 
   ```bash
-  npx dbhub-schema --transport http --port 3000 --dsn "..."
+  npx safe-sql-mcp --transport http --port 3000 --dsn "..."
   ```
 </ParamField>
 
@@ -160,20 +160,20 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   export DB_USER=myuser
   export DB_PASSWORD='p@ss:word#123'
   export DB_NAME=mydb
-  npx dbhub-schema
+  npx safe-sql-mcp
   ```
 </ParamField>
 
 ### --schema
 
 <ParamField path="--schema" type="string" env="SCHEMA">
-  Default schema for this connection. (dbhub-schema fork.)
+  Default schema for this connection. (safe-sql-mcp fork.)
 
   - **PostgreSQL**: Sets the connection `search_path` so `execute_sql` runs in that schema by default; unqualified table names resolve to this schema.
   - **All databases**: `search_objects` is restricted to this schema unless the tool is called with an explicit `schema` argument.
 
   ```bash
-  npx dbhub-schema --dsn "postgres://user:pass@host:5432/mydb" --schema my_app_schema
+  npx safe-sql-mcp --dsn "postgres://user:pass@host:5432/mydb" --schema my_app_schema
   ```
 
   In TOML, set `schema = "my_app_schema"` under `[[sources]]` for the same behavior. See [TOML Configuration](/config/toml).
@@ -187,8 +187,8 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   Tools will be named `execute_sql_{id}` for each instance.
 
   ```bash
-  npx dbhub-schema --id prod --dsn "postgres://user:pass@prod-host:5432/db"
-  npx dbhub-schema --id staging --dsn "postgres://user:pass@staging-host:5432/db"
+  npx safe-sql-mcp --id prod --dsn "postgres://user:pass@prod-host:5432/db"
+  npx safe-sql-mcp --id staging --dsn "postgres://user:pass@staging-host:5432/db"
   ```
 
   Result: `execute_sql_prod` and `execute_sql_staging` tools
@@ -204,7 +204,7 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   Run DBHub with a bundled SQLite sample "employee" database for testing.
 
   ```bash
-  npx dbhub-schema --demo --transport http --port 8080
+  npx safe-sql-mcp --demo --transport http --port 8080
   ```
 </ParamField>
 
@@ -216,7 +216,7 @@ Command-line flags are passed when starting DBHub. These have the highest priori
   Automatically loads `./dbhub.toml` if it exists in the current directory.
 
   ```bash
-  npx dbhub-schema --config ./dbhub.toml --transport http --port 8080
+  npx safe-sql-mcp --config ./dbhub.toml --transport http --port 8080
   ```
 
   See [TOML Configuration](/config/toml) for complete configuration reference including source options, tool options, SSH tunnels, and custom tools.
@@ -248,19 +248,19 @@ SSH tunnel configuration for connecting to databases through bastion/jump hosts.
 
 ```bash
 # Password auth
-npx dbhub-schema --dsn "..." \
+npx safe-sql-mcp --dsn "..." \
   --ssh-host bastion.example.com --ssh-user ubuntu --ssh-password mypassword
 
 # Key-based auth
-npx dbhub-schema --dsn "..." \
+npx safe-sql-mcp --dsn "..." \
   --ssh-host bastion.example.com --ssh-user ubuntu --ssh-key ~/.ssh/id_rsa
 
 # ProxyJump (single hop)
-npx dbhub-schema --dsn "..." \
+npx safe-sql-mcp --dsn "..." \
   --ssh-host target.internal --ssh-proxy-jump bastion.example.com
 
 # ProxyJump (multi-hop: bastion1 → bastion2 → target)
-npx dbhub-schema --dsn "..." \
+npx safe-sql-mcp --dsn "..." \
   --ssh-host target.internal --ssh-proxy-jump "bastion1.com,admin@bastion2:2222"
 ```
 

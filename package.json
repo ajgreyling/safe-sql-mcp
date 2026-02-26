@@ -1,16 +1,16 @@
 {
-  "name": "dbhub-schema",
+  "name": "safe-sql-mcp",
   "version": "0.16.3",
-  "mcpName": "io.github.ajgreyling/dbhub-schema",
+  "mcpName": "io.github.ajgreyling/safe-sql-mcp",
   "description": "Minimal, token-efficient Database MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB. Fork of DBHub with default-schema support.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ajgreyling/dbhub-schema.git"
+    "url": "https://github.com/ajgreyling/safe-sql-mcp.git"
   },
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "dbhub-schema": "dist/index.js"
+    "safe-sql-mcp": "dist/index.js"
   },
   "files": [
     "dist",
