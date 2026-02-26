@@ -44,6 +44,18 @@ safe-sql-mcp is a zero-dependency, token-efficient MCP server implementing the M
 - **Guardrails**: Unconditionally read-only, row limiting, and a safe 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to prevent runaway operations
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
+## Why Capybara?
+
+The capybara is the spirit animal of safe-sql-mcp: calm, social, and famously safe to be around. It reflects the project's philosophy of peaceful coexistence, predictable behavior, and built-in guardrails.
+
+### The Capybara: A Paragon of Peaceful Coexistence
+
+- **Docile temperament**: Capybaras are known for gentle, non-aggressive behavior and are often seen peacefully sharing space with many species.
+- **Herbivorous nature**: As herbivores, they pose no predatory threat to humans or other animals.
+- **Social harmony**: They live in cooperative groups, reinforcing a "safe by default" ecosystem.
+- **Adaptability**: They thrive in different environments, reducing conflict and stress.
+- **Confident calm**: Other animals prefer their company, and capybaras are rarely rattled by neighbors around them.
+
 ## Supported Databases
 
 PostgreSQL, MySQL, SQL Server, MariaDB, and SQLite.

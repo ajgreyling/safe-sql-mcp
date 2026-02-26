@@ -1,6 +1,6 @@
 {
   "name": "safe-sql-mcp",
-  "version": "0.16.4",
+  "version": "1.0.0",
   "mcpName": "io.github.ajgreyling/safe-sql-mcp",
   "description": "Minimal, token-efficient Database Read-Only MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB. Fork of DBHub with default-schema support.",
   "repository": {
