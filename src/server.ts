@@ -43,14 +43,13 @@ export function generateBanner(version: string, modes: string[] = []): string {
   const modeText = modes.length > 0 ? ` [${modes.join(' | ')}]` : '';
 
   return `
- _____  ____  _   _       _     
-|  __ \\|  _ \\| | | |     | |    
-| |  | | |_) | |_| |_   _| |__  
-| |  | |  _ <|  _  | | | | '_ \\ 
-| |__| | |_) | | | | |_| | |_) |
-|_____/|____/|_| |_|\\__,_|_.__/ 
-                                
-v${version}${modeText} - Minimal Database MCP Server
+ ____    _    _____ _____   ____   ___  _
+/ ___|  / \\  |  ___| ____| / ___| / _ \\| |
+\\___ \\ / _ \\ | |_  |  _|   \\___ \\| | | | |
+ ___) / ___ \\|  _| | |___   ___) | |_| | |___
+|____/_/   \\_\\_|   |_____| |____/ \\__\\_\\_____|
+
+v${version}${modeText} - Minimal Readonly Database MCP Server
 `;
 }
 

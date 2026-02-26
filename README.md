@@ -1,6 +1,6 @@
 # safe-sql-mcp
 
-**safe-sql-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). It keeps the same behavior and internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups.
+**safe-sql-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). Apart from only allowing read-only operations, it keeps the same behavior and internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups. 
 
 - **Original project:** [github.com/bytebase/dbhub](https://github.com/bytebase/dbhub)
 - **This fork:** [github.com/ajgreyling/safe-sql-mcp](https://github.com/ajgreyling/safe-sql-mcp)
