@@ -248,9 +248,9 @@ describe('Data Sources API Integration Tests', () => {
       const source = (await response.json()) as DataSource;
       expect(source.id).toBe('writable_limited');
 
-      // Check execute_sql tool has readonly and max_rows
+      // Check execute_sql tool has readonly and max_rows (this fork is unconditionally read-only)
       const executeSql = source.tools.find(t => t.name.startsWith('execute_sql'));
-      expect(executeSql?.readonly).toBe(false);
+      expect(executeSql?.readonly).toBe(true);
       expect(executeSql?.max_rows).toBe(500);
     });
 

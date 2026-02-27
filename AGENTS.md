@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This codebase is the **safe-sql-mcp** fork ([github.com/ajgreyling/safe-sql-mcp](https://github.com/ajgreyling/safe-sql-mcp)) of DBHub; it keeps internal names (e.g. `dbhub.toml`) for upstream compatibility and adds `--schema` / default schema support.
 
-**This fork is PII-safe.** Query results from `execute_sql` and custom tools are never sent to the LLM. Data is written to `.safe-sql-results/`; only success/failure and file path are returned (no count or column names to prevent exfiltration via dynamic SQL). See `src/utils/result-writer.ts` and `createPiiSafeToolResponse` in `src/utils/response-formatter.ts`.
+**This fork is PII-safe.** Query results from `execute_sql` and custom tools are never sent to the LLM. Data is written to `.safe-sql-results/` and opened in the editor; only success/failure is returned to the LLM (no file path, count, or column names to prevent exfiltration via dynamic SQL). See `src/utils/result-writer.ts` and `createPiiSafeToolResponse` in `src/utils/response-formatter.ts`.
 
 # DBHub Development Guidelines
 
@@ -12,7 +12,7 @@ DBHub is a zero-dependency, token efficient database MCP server implementing the
 
 **This fork is unconditionally read-only.** Write operations are never allowed. Only read-only SQL (SELECT, WITH, EXPLAIN, SHOW, etc.) is permitted.
 
-**This fork is PII-safe.** Query results are written to `.safe-sql-results/`; only success/failure and file path are sent to the LLM (no row count or column names). Actual data never enters the MCP tool response. Configure output format via `--output-format=csv|json|markdown`.
+**This fork is PII-safe.** Query results are written to `.safe-sql-results/` and opened in the editor; only success/failure is sent to the LLM (no file path, row count, or column names). Actual data never enters the MCP tool response. Configure output format via `--output-format=csv|json|markdown`.
 
 ## Commands
 

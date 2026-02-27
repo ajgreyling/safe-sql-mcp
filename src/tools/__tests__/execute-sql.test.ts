@@ -70,8 +70,7 @@ describe('execute-sql tool', () => {
       const parsedResult = parseToolResponse(result);
 
       expect(parsedResult.success).toBe(true);
-      expect(parsedResult.data.file_path).toContain('.safe-sql-results');
-      expect(parsedResult.data.file_path).toContain('execute_sql');
+      expect(parsedResult.data.file_path).toBeUndefined();
       expect(parsedResult.data.rows).toBeUndefined();
       expect(parsedResult.data.columns).toBeUndefined();
       expect(parsedResult.data.count).toBeUndefined();

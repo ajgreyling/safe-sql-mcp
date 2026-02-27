@@ -70,16 +70,16 @@ export function createToolErrorResponse(error: string, code: string = "ERROR", d
 }
 
 /**
- * Create a PII-safe tool response with only the file path.
- * Query result data is written to a file; this response is sent to the LLM.
- * No count, columns, or source_id to prevent exfiltration via dynamic column aliasing.
+ * Create a PII-safe tool response with success only (no file path).
+ * Query result data is written to a file and opened in the editor; this response is sent to the LLM.
+ * No count, columns, file path, or source_id to prevent exfiltration via dynamic column aliasing.
  */
-export function createPiiSafeToolResponse(meta: { file_path: string }) {
+export function createPiiSafeToolResponse() {
   return {
     content: [
       {
         type: "text" as const,
-        text: JSON.stringify(formatSuccessResponse(meta), bigIntReplacer, 2),
+        text: JSON.stringify(formatSuccessResponse({}), bigIntReplacer, 2),
         mimeType: "application/json",
       },
     ],

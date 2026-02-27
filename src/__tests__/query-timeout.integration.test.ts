@@ -31,7 +31,7 @@ describe('Query timeout integration test', () => {
       ? `${dsn}&sslmode=disable`
       : `${dsn}?sslmode=disable`;
 
-    serverProcess = spawn('pnpm', ['dev'], {
+    serverProcess = spawn('pnpm', ['run', 'dev:backend'], {
       env: {
         ...process.env,
         DSN: dsnWithSsl,
@@ -109,7 +109,7 @@ describe('Query timeout integration test', () => {
       const content = JSON.parse(response.result.content[0].text);
       expect(content.success).toBe(false);
       expect(content.error).toBeDefined();
-      expect(content.error_code).toBe('EXECUTION_ERROR');
+      expect(content.code).toBe('EXECUTION_ERROR');
 
       expect(durationMs).toBeGreaterThanOrEqual(55000);
       expect(durationMs).toBeLessThan(90000);

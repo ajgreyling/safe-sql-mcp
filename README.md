@@ -1,6 +1,6 @@
 # safe-sql-mcp
 
-**safe-sql-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). Apart from only allowing read-only operations, it keeps the same behavior and internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups. 
+**safe-sql-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). The key difference: **DBHub sends query results (rows, columns, counts) directly to the LLM**, which can expose sensitive data. **safe-sql-mcp is PII-safe**: it writes results to local files, opens them in the editor, and returns only success/failure to the LLM—no data or file path ever reaches the model. It also enforces read-only SQL, keeps the same internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups. 
 
 - **Original project:** [github.com/bytebase/dbhub](https://github.com/bytebase/dbhub)
 - **This fork:** [github.com/ajgreyling/safe-sql-mcp](https://github.com/ajgreyling/safe-sql-mcp)
@@ -21,30 +21,86 @@ git remote set-url origin https://github.com/ajgreyling/safe-sql-mcp.git
 </a>
 </p>
 
-```bash
-            +------------------+    +--------------+    +------------------+
-            |                  |    |              |    |                  |
-            |  Claude Desktop  +--->+              +--->+    PostgreSQL    |
-            |  Claude Code     +--->+   safe-sql-mcp     +--->+    SQL Server    |
-            |  Cursor          +--->+  (DBHub fork)+--->+    SQLite        |
-            |  VS Code         +--->+              +--->+    MySQL         |
-            |  Copilot CLI     +--->+              +--->+    MariaDB       |
-            +------------------+    +--------------+    +------------------+
-                 MCP Clients           MCP Server             Databases
+```mermaid
+flowchart LR
+    subgraph clients["MCP Clients"]
+        A[Claude Desktop]
+        B[Claude Code]
+        C[Cursor]
+        D[VS Code]
+        E[Copilot CLI]
+    end
+
+    subgraph server["MCP Server"]
+        M[safe-sql-mcp]
+    end
+
+    subgraph dbs["Databases"]
+        P[PostgreSQL]
+        S[SQL Server]
+        L[SQLite]
+        My[MySQL]
+        Ma[MariaDB]
+    end
+
+    A --> M
+    B --> M
+    C --> M
+    D --> M
+    E --> M
+
+    M --> P
+    M --> S
+    M --> L
+    M --> My
+    M --> Ma
+```
+
+### PII-safe data flow
+
+SQL results never reach the LLM. They are written to local files and opened in the editor; only a success/failure status is returned:
+
+```mermaid
+flowchart TB
+    subgraph llm["LLM / MCP Client"]
+        Q["SQL query"]
+        R["Tool response:\n✓ success/failure only"]
+    end
+
+    subgraph server["safe-sql-mcp"]
+        Exec[Execute SQL]
+        Write[Write to .safe-sql-results/]
+        Format[createPiiSafeToolResponse]
+    end
+
+    subgraph db["Database"]
+        DB[(PostgreSQL, SQLite, etc.)]
+    end
+
+    subgraph files["Local filesystem"]
+        CSV[".safe-sql-results/YYYYMMDD_HHMMSS_execute_sql.csv"]
+    end
+
+    Q -->|1. Call execute_sql| Exec
+    Exec -->|2. Run query| DB
+    DB -->|3. Result rows| Write
+    Write -->|4. Data to file, open in editor| CSV
+    Write -->|5. Then format success response| Format
+    Format -->|6. Success only - no path, count, or columns| R
 ```
 
 safe-sql-mcp is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema.
 
 **This fork is unconditionally read-only.** Only read-only SQL (SELECT, WITH, EXPLAIN, SHOW, etc.) is allowed. Write operations (UPDATE, DELETE, INSERT, MERGE, etc.) are never permitted.
 
-**PII-safe by design.** Query results are never sent to the LLM. Raw data is written to local files (`.safe-sql-results/`) and the LLM receives only success/failure plus the file path. No row count or column names are returned (to prevent exfiltration via dynamic SQL). This prevents personally identifiable information (PII) from ever reaching the model.
+**PII-safe by design.** Query results are never sent to the LLM. Raw data is written to local files (`.safe-sql-results/`) and opened in the editor; the LLM receives only success/failure. No file path, row count, or column names are returned (to prevent exfiltration via dynamic SQL). This prevents personally identifiable information (PII) from ever reaching the model.
 
 - **Local Development First**: Zero dependency, token efficient with just two MCP tools to maximize context window
 - **Multi-Database**: PostgreSQL, MySQL, MariaDB, SQL Server, and SQLite through a single interface
 - **Multi-Connection**: Connect to multiple databases simultaneously with TOML configuration
 - **Default schema**: Use `--schema` (or TOML `schema = "..."`) so PostgreSQL uses that schema for `execute_sql` and `search_objects` is restricted to it (see below)
 - **Guardrails**: Unconditionally read-only, row limiting, and a safe 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to prevent runaway operations
-- **PII-safe**: Query results are written to `.safe-sql-results/`; only success/failure and file path are sent to the LLM—no row data, count, or column names (prevents exfiltration via dynamic column aliasing)
+- **PII-safe**: Query results are written to `.safe-sql-results/` and opened in the editor; only success/failure is sent to the LLM—no file path, row data, count, or column names (prevents exfiltration via dynamic column aliasing)
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
 ## Why Capybara?
@@ -114,7 +170,7 @@ Full DBHub docs (including TOML and command-line options) apply; see [dbhub.ai](
 
 ### PII-safe output
 
-By default, `execute_sql` and custom tools write query results to `.safe-sql-results/` in your project directory. The MCP tool response sent to the LLM contains only success/failure and the file path. **No row data, row count, or column names** are returned—preventing both direct PII leakage and exfiltration via dynamic SQL (e.g. `SELECT secret AS "password_is_hunter2"`). The user inspects results by opening the file. Output format is configurable via `--output-format=csv|json|markdown` (default: `csv`).
+By default, `execute_sql` and custom tools write query results to `.safe-sql-results/` in your project directory and open them in the editor. The MCP tool response sent to the LLM contains only success/failure. **No file path, row data, row count, or column names** are returned—preventing both direct PII leakage and exfiltration via dynamic SQL (e.g. `SELECT secret AS "password_is_hunter2"`). The user inspects results in the editor. Output format is configurable via `--output-format=csv|json|markdown` (default: `csv`).
 
 ### Read-only (unconditional)
 

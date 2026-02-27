@@ -203,8 +203,8 @@ export function createCustomToolHandler(toolConfig: ToolConfig) {
         paramValues
       );
 
-      const filePath = writeResultFile(result.rows, toolConfig.name, getOutputFormat());
-      return createPiiSafeToolResponse({ file_path: filePath });
+      writeResultFile(result.rows, toolConfig.name, getOutputFormat());
+      return createPiiSafeToolResponse();
     } catch (error) {
       success = false;
       errorMessage = (error as Error).message;

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { Wait } from 'testcontainers';
 import { MSSQLServerContainer, StartedMSSQLServerContainer } from '@testcontainers/mssqlserver';
 import { SQLServerConnector } from '../sqlserver/index.js';
 import { IntegrationTestBase, type TestContainer, type DatabaseTestConfig } from './shared/integration-test-base.js';
@@ -42,9 +43,12 @@ class SQLServerIntegrationTest extends IntegrationTestBase<SQLServerTestContaine
   }
 
   async createContainer(): Promise<SQLServerTestContainer> {
+    // Use port-based wait - "Recovery is complete" log may not appear in all images. SQL Server needs 3-5 min.
     const container = await new MSSQLServerContainer('mcr.microsoft.com/mssql/server:2019-latest')
       .acceptLicense() // Required for SQL Server containers
       .withPassword('Password123!')
+      .withWaitStrategy(Wait.forListeningPorts().withStartupTimeout(300_000))
+      .withStartupTimeout(300_000)
       .start();
     
     return new SQLServerTestContainer(container);
