@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This codebase is the **capybara-db-mcp** fork ([github.com/ajgreyling/capybara-db-mcp](https://github.com/ajgreyling/capybara-db-mcp)) of DBHub; it keeps internal names (e.g. `dbhub.toml`) for upstream compatibility and adds `--schema` / default schema support.
 
-**This fork is PII-safe.** Query results from `execute_sql` and custom tools are never sent to the LLM. Data is written to `.safe-sql-results/` and opened in the editor; only success/failure is returned to the LLM (no file path, count, or column names to prevent exfiltration via dynamic SQL). See `src/utils/result-writer.ts` and `createPiiSafeToolResponse` in `src/utils/response-formatter.ts`.
+**This fork is PII-safe.** Query results from `execute_sql` and custom tools are never sent to the LLM. Data is written to `.safe-sql-results/` and opened in the editor; only success/failure is returned to the LLM (no file path, count, or column names to prevent exfiltration via dynamic SQL). Error responses are hardened: SQL statements and parameter values are never included in tool error text; they are logged to stderr. Database error messages are truncated via `truncateForLLM` before being returned. See `src/utils/result-writer.ts`, `createPiiSafeToolResponse` and `truncateForLLM` in `src/utils/response-formatter.ts`, and `src/tools/custom-tool-handler.ts`.
 
 # DBHub Development Guidelines
 
@@ -39,6 +39,7 @@ src/
 │   └── sqlite/          # SQLite connector
 ├── tools/               # MCP tool handlers
 │   ├── execute-sql.ts   # SQL execution handler (PII-safe: writes to file)
+│   ├── custom-tool-handler.ts  # Custom SQL tools (PII-safe: error path hardened)
 │   └── search-objects.ts  # Unified search/list with progressive disclosure
 ├── utils/               # Shared utilities
 │   ├── dsn-obfuscator.ts# DSN security
@@ -64,7 +65,7 @@ Key architectural patterns:
   - Tests in `src/__tests__/json-rpc-integration.test.ts`
 - **Tool Handlers**: Clean separation of MCP protocol concerns
   - Tools accept optional `source_id` parameter for multi-database routing
-- **PII-Safe Output**: `execute_sql` and custom tools never return row data to the LLM. Results are written to `.safe-sql-results/`; tool responses contain only success/failure and file_path (no count or columns to prevent exfiltration). Output format: `--output-format=csv|json|markdown`
+- **PII-Safe Output**: `execute_sql` and custom tools never return row data to the LLM. Results are written to `.safe-sql-results/`; tool responses contain only success/failure (no file path, count, or columns to prevent exfiltration). Error responses do not include SQL or parameter values; they are logged to stderr. Database error text is truncated. Output format: `--output-format=csv|json|markdown`
 - **Token-Efficient Schema Exploration**: Unified search/list tool with progressive disclosure
   - `search_objects`: Single tool for both pattern-based search and listing all objects
   - Pattern parameter defaults to `%` (match all) - optional for listing use cases

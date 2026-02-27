@@ -9,6 +9,7 @@ import { ConnectorManager } from "../connectors/manager.js";
 import {
   createPiiSafeToolResponse,
   createToolErrorResponse,
+  truncateForLLM,
 } from "../utils/response-formatter.js";
 import { writeResultFile } from "../utils/result-writer.js";
 import { getOutputFormat } from "../config/output-format.js";
@@ -209,13 +210,14 @@ export function createCustomToolHandler(toolConfig: ToolConfig) {
       success = false;
       errorMessage = (error as Error).message;
 
-      // Provide helpful error messages for common issues
+      // Provide helpful error messages for common issues (PII-safe: no SQL or params to LLM)
       if (error instanceof z.ZodError) {
         const issues = error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
         errorMessage = `Parameter validation failed: ${issues}`;
       } else {
-        // Add SQL context to execution errors for debugging
-        errorMessage = `${errorMessage}\n\nSQL: ${toolConfig.statement}\nParameters: ${JSON.stringify(paramValues)}`;
+        console.error(`[${toolConfig.name}] Execution error — SQL: ${toolConfig.statement}`);
+        console.error(`[${toolConfig.name}] Parameters: ${JSON.stringify(paramValues)}`);
+        errorMessage = truncateForLLM((error as Error).message);
       }
 
       return createToolErrorResponse(errorMessage, "EXECUTION_ERROR");

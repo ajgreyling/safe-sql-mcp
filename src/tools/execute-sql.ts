@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ConnectorManager } from "../connectors/manager.js";
-import { createPiiSafeToolResponse, createToolErrorResponse } from "../utils/response-formatter.js";
+import { createPiiSafeToolResponse, createToolErrorResponse, truncateForLLM } from "../utils/response-formatter.js";
 import { writeResultFile } from "../utils/result-writer.js";
 import { getOutputFormat } from "../config/output-format.js";
 import { isReadOnlySQL, allowedKeywords } from "../utils/allowed-keywords.js";
@@ -86,7 +86,9 @@ export function createExecuteSqlToolHandler(sourceId?: string) {
       return createPiiSafeToolResponse();
     } catch (error) {
       success = false;
-      errorMessage = (error as Error).message;
+      const fullError = (error as Error).message;
+      console.error(`[execute_sql] Execution error: ${fullError}`);
+      errorMessage = truncateForLLM(fullError);
       return createToolErrorResponse(errorMessage, "EXECUTION_ERROR");
     } finally {
       // Track the request

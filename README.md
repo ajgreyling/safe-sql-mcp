@@ -95,19 +95,19 @@ capybara-db-mcp is a zero-dependency, token-efficient MCP server implementing th
 
 **This fork is unconditionally read-only.** Only read-only SQL (SELECT, WITH, EXPLAIN, SHOW, etc.) is allowed. Write operations (UPDATE, DELETE, INSERT, MERGE, etc.) are never permitted.
 
-**Your data is safe with Capybara.** Capybaras are famously safe and peaceful—and so is your data. Query results are **never shared with an LLM**. Raw data is written to local files (`.safe-sql-results/`) and opened in the editor; the LLM receives only success/failure. No file path, row count, or column names are returned (to prevent exfiltration via dynamic SQL). This prevents personally identifiable information (PII) from ever reaching the model.
+**Your data is safe with Capybara.** Capybaras are famously safe and peaceful—and so is your data. Query results are **never shared with an LLM**. Raw data is written to local files (`.safe-sql-results/`) and opened in the editor; the LLM receives only success/failure. No file path, row count, or column names are returned (to prevent exfiltration via dynamic SQL). Error responses are also PII-safe: SQL statements and parameter values are never sent to the LLM; they are logged to stderr for local debugging, and database error messages are truncated. This prevents personally identifiable information (PII) from ever reaching the model. There is a default timeout of 60 seconds to ensure queries are not tying up the server. 
 
 - **Local Development First**: Zero dependency, token efficient with just two MCP tools to maximize context window
 - **Multi-Database**: PostgreSQL, MySQL, MariaDB, SQL Server, and SQLite through a single interface
 - **Multi-Connection**: Connect to multiple databases simultaneously with TOML configuration
 - **Default schema**: Use `--schema` (or TOML `schema = "..."`) so PostgreSQL uses that schema for `execute_sql` and `search_objects` is restricted to it (see below)
 - **Guardrails**: Unconditionally read-only, row limiting, and a safe 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to prevent runaway operations
-- **PII-safe**: Query results are written to `.safe-sql-results/` and opened in the editor; only success/failure is sent to the LLM—no file path, row data, count, or column names (prevents exfiltration via dynamic column aliasing)
+- **PII-safe**: Query results are written to `.safe-sql-results/` and opened in the editor; only success/failure is sent to the LLM—no file path, row data, count, or column names (prevents exfiltration via dynamic column aliasing). Error responses are hardened: SQL and parameter values are logged locally, not returned to the LLM; database error text is truncated.
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
 ## Why Capybara?
 
-The capybara is the spirit animal of capybara-db-mcp: calm, social, and famously safe to be around. **Just as capybaras are safe**, your database data stays safe—never shared with an LLM. It reflects the project's philosophy of peaceful coexistence, predictable behavior, and built-in guardrails.
+The capybara is the spirit animal of capybara-db-mcp: calm, social, and famously safe to be around. **Just as capybaras are safe, your database data stays safe—never shared with an LLM**. It reflects the project's philosophy of peaceful coexistence, predictable behavior, and built-in guardrails.
 
 ### The Capybara: A Paragon of Peaceful Coexistence
 
@@ -172,7 +172,7 @@ Full DBHub docs (including TOML and command-line options) apply; see [dbhub.ai](
 
 ### PII-safe output
 
-By default, `execute_sql` and custom tools write query results to `.safe-sql-results/` in your project directory and open them in the editor. The MCP tool response sent to the LLM contains only success/failure. **No file path, row data, row count, or column names** are returned—preventing both direct PII leakage and exfiltration via dynamic SQL (e.g. `SELECT secret AS "password_is_hunter2"`). The user inspects results in the editor. Output format is configurable via `--output-format=csv|json|markdown` (default: `csv`).
+By default, `execute_sql` and custom tools write query results to `.safe-sql-results/` in your project directory and open them in the editor. The MCP tool response sent to the LLM contains only success/failure. **No file path, row data, row count, or column names** are returned—preventing both direct PII leakage and exfiltration via dynamic SQL (e.g. `SELECT secret AS "password_is_hunter2"`). Error responses are likewise hardened: SQL statements and parameter values are never included in tool error text sent to the LLM; they are logged to stderr for debugging. Database error messages are truncated before being returned. The user inspects results in the editor. Output format is configurable via `--output-format=csv|json|markdown` (default: `csv`).
 
 ### Read-only (unconditional)
 

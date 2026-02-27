@@ -1,10 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { z } from "zod";
 import {
   buildZodSchemaFromParameters,
   buildInputSchema,
+  createCustomToolHandler,
 } from "../custom-tool-handler.js";
 import type { ParameterConfig } from "../../types/config.js";
+import type { Connector, ConnectorType } from "../../connectors/interface.js";
+import { ConnectorManager } from "../../connectors/manager.js";
+
+vi.mock("../../connectors/manager.js");
 
 describe("Custom Tool Handler", () => {
   describe("buildZodSchemaFromParameters", () => {
@@ -355,6 +360,93 @@ describe("Custom Tool Handler", () => {
       expect(schema.type).toBe("object");
       expect(schema.properties).toEqual({});
       expect(schema.required).toBeUndefined();
+    });
+  });
+
+  describe("createCustomToolHandler error responses (PII-safe)", () => {
+    const createMockConnector = (sourceId: string, id: ConnectorType = "postgres"): Connector =>
+      ({
+        id,
+        name: "Mock Connector",
+        getId: () => sourceId,
+        dsnParser: {} as any,
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        clone: vi.fn(),
+        getSchemas: vi.fn(),
+        getTables: vi.fn(),
+        tableExists: vi.fn(),
+        getTableSchema: vi.fn(),
+        getTableIndexes: vi.fn(),
+        getStoredProcedures: vi.fn(),
+        getStoredProcedureDetail: vi.fn(),
+        executeSQL: vi.fn(),
+      }) as Connector;
+
+    const parseToolResponse = (response: { content: Array<{ text: string }> }) =>
+      JSON.parse(response.content[0].text);
+
+    beforeEach(() => {
+      vi.mocked(ConnectorManager.ensureConnected).mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should not include SQL or parameter values in error response sent to LLM", async () => {
+      const secretEmail = "alice.pii@example.com";
+      const secretStatement = "SELECT * FROM users WHERE email = $1 AND secret = $2";
+      const secretParam2 = "hunter2";
+
+      const mockConnector = createMockConnector("default");
+      vi.mocked(mockConnector.executeSQL).mockRejectedValue(new Error("connection refused"));
+
+      vi.mocked(ConnectorManager.getCurrentConnector).mockReturnValue(mockConnector);
+
+      const toolConfig = {
+        name: "get_user",
+        source: "default",
+        description: "Get user by email",
+        statement: secretStatement,
+        parameters: [
+          { name: "email", type: "string" as const, description: "User email" },
+          { name: "secret", type: "string" as const, description: "Secret" },
+        ],
+      };
+
+      const handler = createCustomToolHandler(toolConfig);
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const result = await handler(
+        { email: secretEmail, secret: secretParam2 },
+        null
+      );
+
+      const parsed = parseToolResponse(result);
+
+      expect(parsed.success).toBe(false);
+      expect(parsed.code).toBe("EXECUTION_ERROR");
+
+      const responseText = result.content[0].text;
+      expect(responseText).not.toContain(secretEmail);
+      expect(responseText).not.toContain(secretParam2);
+      expect(responseText).not.toContain(secretStatement);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`[get_user] Execution error — SQL: ${secretStatement}`)
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`[get_user] Parameters:`)
+      );
+      const paramsCall = consoleErrorSpy.mock.calls.find((c) =>
+        String(c[0]).includes("Parameters:")
+      );
+      expect(paramsCall).toBeDefined();
+      expect(String(paramsCall![0])).toContain(secretEmail);
+      expect(String(paramsCall![0])).toContain(secretParam2);
+
+      consoleErrorSpy.mockRestore();
     });
   });
 });

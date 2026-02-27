@@ -1,5 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { createPiiSafeToolResponse } from "../response-formatter.js";
+import { createPiiSafeToolResponse, truncateForLLM } from "../response-formatter.js";
+
+describe("truncateForLLM", () => {
+  it("returns message unchanged when under max length", () => {
+    const short = "connection refused";
+    expect(truncateForLLM(short)).toBe(short);
+  });
+
+  it("truncates long messages and appends hint", () => {
+    const long = "x".repeat(300);
+    const result = truncateForLLM(long);
+    expect(result.length).toBeLessThan(300);
+    expect(result).toContain("... (truncated, see server logs)");
+    expect(result.slice(0, 256)).toBe("x".repeat(256));
+  });
+});
 
 describe("createPiiSafeToolResponse", () => {
   it("returns success only (no file_path) to prevent exfiltration via column aliasing", () => {

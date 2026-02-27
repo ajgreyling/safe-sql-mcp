@@ -14,6 +14,17 @@ export function bigIntReplacer(_key: string, value: any): any {
   return value;
 }
 
+const MAX_ERROR_LENGTH = 256;
+
+/**
+ * Truncate error messages sent to the LLM to limit PII leakage from database error text.
+ * Full message is logged to stderr by callers.
+ */
+export function truncateForLLM(message: string): string {
+  if (message.length <= MAX_ERROR_LENGTH) return message;
+  return message.slice(0, MAX_ERROR_LENGTH) + "... (truncated, see server logs)";
+}
+
 /**
  * Create a success response with the given data
  */
