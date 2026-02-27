@@ -53,7 +53,7 @@ export function generateBanner(version: string, modes: string[] = []): string {
              | |      __/ |                           
              |_|     |___/                            
 
-v${version}${modeText} - Minimal Readonly Database MCP Server
+v${version}${modeText} - Minimal Readonly PPI-safe Database MCP Server
 `;
 }
 
