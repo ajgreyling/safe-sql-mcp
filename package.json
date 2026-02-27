@@ -1,6 +1,6 @@
 {
   "name": "capybara-db-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "mcpName": "io.github.ajgreyling/capybara-db-mcp",
   "description": "Minimal, token-efficient Database Read-Only PPI-safe MCP Server for PostgreSQL, MySQL, SQL Server, SQLite, MariaDB. Fork of DBHub with default-schema support.",
   "repository": {
