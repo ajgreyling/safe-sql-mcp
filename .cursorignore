@@ -1,0 +1,3 @@
+# Query result files — contains PII data (names, SSNs, emails, DOBs, etc.)
+# These files must never be indexed, read, or included in AI context.
+.safe-sql-results/

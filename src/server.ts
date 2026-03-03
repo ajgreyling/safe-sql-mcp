@@ -15,7 +15,10 @@ import {
   setEditorExplicitly,
   isEditorExplicitlySet,
   detectEditorFromClientName,
+  setOpeningResultsSupported,
+  isEditorSupportedForOpening,
 } from "./config/editor-command.js";
+import { ensureSafeSqlResultsInIgnoreFiles } from "./utils/ignore-file-sync.js";
 import { registerTools } from "./tools/index.js";
 import { listSources, getSource } from "./api/sources.js";
 import { listRequests } from "./api/requests.js";
@@ -124,7 +127,15 @@ See documentation for more details on configuring database connections.
     if (editorResult) {
       setEditorCommand(editorResult.editor);
       setEditorExplicitly(true);
-      console.error(`Editor for result files: ${editorResult.editor} (${editorResult.source})`);
+      setOpeningResultsSupported(isEditorSupportedForOpening(editorResult.editor));
+      if (isEditorSupportedForOpening(editorResult.editor)) {
+        ensureSafeSqlResultsInIgnoreFiles(process.cwd(), editorResult.editor);
+        console.error(`Editor for result files: ${editorResult.editor} (${editorResult.source})`);
+      } else {
+        console.error(
+          `Editor ${editorResult.editor} does not support secure result opening; results will not be opened automatically (${editorResult.source})`
+        );
+      }
     }
 
     // Create MCP server factory function for HTTP transport
@@ -143,7 +154,14 @@ See documentation for more details on configuring database connections.
           const detected = detectEditorFromClientName(clientName);
           if (detected) {
             setEditorCommand(detected);
+            setOpeningResultsSupported(true);
+            ensureSafeSqlResultsInIgnoreFiles(process.cwd(), detected);
             console.error(`Editor for result files: ${detected} (detected from MCP client: ${clientName})`);
+          } else if (clientName) {
+            setOpeningResultsSupported(false);
+            console.error(
+              `MCP client "${clientName}" does not support secure result opening; results will not be opened automatically`
+            );
           }
         }
       };

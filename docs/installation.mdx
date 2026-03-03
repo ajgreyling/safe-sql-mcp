@@ -421,6 +421,10 @@ Verify DBHub is loaded:
 
 ### VS Code
 
+<Warning>
+**Not recommended for capybara-db-mcp**: VS Code and GitHub Copilot do not have a project-level ignore mechanism (such as `.cursorignore`) to exclude `.safe-sql-results/` from AI context. Query result files may be exposed to the LLM, undermining the PII isolation design. For PII-safe database workflows, use **Cursor**, **Claude Code**, **Codex**, or **Gemini** instead.
+</Warning>
+
 VS Code has native MCP support through GitHub Copilot. Create `.vscode/mcp.json` in your project root:
 
 <Tabs>

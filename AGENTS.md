@@ -19,7 +19,7 @@ This codebase is the **capybara-db-mcp** fork ([github.com/ajgreyling/capybara-d
 
 The core design is intended to reduce the likelihood of transmitting query result data to an LLM:
 
-- **Result isolation**: Result sets are written to `.safe-sql-results/` and opened locally in the editor; tool responses return only success/failure metadata (no file paths, row counts, or column names). See `createPiiSafeToolResponse` in `src/utils/response-formatter.ts` and `src/utils/result-writer.ts`.
+- **Result isolation**: Result sets are written to `.safe-sql-results/` and opened locally in the editor only when running in a supported client (Cursor, Claude Code, Codex, Gemini); tool responses return only success/failure metadata (no file paths, row counts, or column names). See `createPiiSafeToolResponse` in `src/utils/response-formatter.ts` and `src/utils/result-writer.ts`.
 - **Generic errors**: Execution and search errors return generic messages only (`Execution failed. See server logs for details.`); no SQL, parameter values, or DB error text are returned to the client. See `createGenericToolErrorResponse` in `src/utils/response-formatter.ts`.
 - **Log redaction**: Stderr logs do not include SQL statements or parameter values; only tool name and status are logged.
 - **search_objects**: Returns names only (summary/full detail levels disabled) to avoid leaking schema metadata.
@@ -33,7 +33,7 @@ These mechanisms reduce LLM data exposure risk when used appropriately, but they
 
 # DBHub Development Guidelines
 
-DBHub is a zero-dependency, token efficient database MCP server implementing the Model Context Protocol (MCP) server interface. This lightweight server bridges MCP-compatible clients (Claude Desktop, Claude Code, Cursor) with various database systems.
+DBHub is a zero-dependency, token efficient database MCP server implementing the Model Context Protocol (MCP) server interface. This lightweight server bridges MCP-compatible clients (Claude Desktop, Claude Code, Cursor, Codex, Gemini) with various database systems. **VS Code and GitHub Copilot are not supported** — they lack a project-level ignore mechanism for `.safe-sql-results/`.
 
 ## Governance Expectations
 
@@ -51,7 +51,7 @@ Database connections are opened in read-only mode (PostgreSQL: `default_transact
 
 ### Output isolation (designed to reduce LLM exposure)
 
-Query results are written to `.safe-sql-results/` and opened in the editor; tool responses are formatted to return success/failure metadata rather than raw result sets (including file paths, row counts, or column names). This reduces the likelihood of sending result data to an LLM, but does not eliminate data handling risk. Configure output format via `--output-format=csv|json|markdown`.
+Query results are written to `.safe-sql-results/` and opened in the editor only when running in a supported client (Cursor, Claude Code, Codex, Gemini); tool responses are formatted to return success/failure metadata rather than raw result sets (including file paths, row counts, or column names). This reduces the likelihood of sending result data to an LLM, but does not eliminate data handling risk. Configure output format via `--output-format=csv|json|markdown`.
 
 ## Commands
 
@@ -170,7 +170,7 @@ DBHub supports three configuration methods (in priority order):
 - `--config`: Path to TOML configuration file
 - `--demo`: Use bundled SQLite employee database
 - `--output-format`: Result file format for local result files: `csv` (default), `json`, or `markdown`
-- `--editor`: CLI command to open result files (e.g., `cursor`, `code`). Auto-detected from MCP client (Cursor/VS Code) when not set. Override via `--editor=code` or `EDITOR_COMMAND` env var.
+- `--editor`: CLI command to open result files (e.g., `cursor`, `claude`, `codex`, `gemini`). Auto-detected from MCP client when not set. Only supported editors (Cursor, Claude Code, Codex, Gemini) open result files automatically; VS Code/Copilot is not supported. Override via `--editor=cursor` or `EDITOR_COMMAND` env var.
 - `--max-rows`: Limit rows returned from SELECT queries (deprecated - use TOML configuration instead)
 - SSH tunnel options: `--ssh-host`, `--ssh-port`, `--ssh-user`, `--ssh-password`, `--ssh-key`, `--ssh-passphrase`
 - Documentation: https://dbhub.ai/config/command-line

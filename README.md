@@ -34,12 +34,12 @@ git remote set-url origin https://github.com/ajgreyling/capybara-db-mcp.git
 
 ```mermaid
 flowchart LR
-    subgraph clients["MCP Clients"]
+    subgraph clients["MCP Clients - Supported"]
         A[Claude Desktop]
         B[Claude Code]
         C[Cursor]
-        D[VS Code]
-        E[Copilot CLI]
+        D[Codex]
+        E[Gemini]
     end
 
     subgraph server["MCP Server"]
@@ -67,6 +67,12 @@ flowchart LR
     M --> Ma
 ```
 
+### Unsupported: VS Code / GitHub Copilot
+
+**VS Code and GitHub Copilot are not supported** for capybara-db-mcp for security reasons. There is no project-level ignore file (such as `.cursorignore` or `.aiexclude`) that Copilot consistently reads to exclude `.safe-sql-results/` from AI context. Query result files may therefore be exposed to the LLM when using VS Code/Copilot, undermining the PII isolation design.
+
+**Use of capybara-db-mcp in VS Code/Copilot is not recommended.** For PII-safe database workflows, use one of the supported editors that provide ignore mechanisms: **Cursor**, **Claude Code**, **Codex**, or **Gemini**.
+
 ## Security Model Overview
 
 capybara-db-mcp is designed to reduce the likelihood of transmitting query result data to an LLM by isolating result sets to the local filesystem and returning status-oriented metadata to the MCP client.
@@ -74,7 +80,7 @@ capybara-db-mcp is designed to reduce the likelihood of transmitting query resul
 - **1) LLM generates SQL**: The MCP client sends an `execute_sql` request containing SQL text.
 - **2) Connector is read-only**: Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). Write attempts fail at the database level.
 - **3) Query executes against the database**: The query runs using the configured connector.
-- **4) Results are written locally**: Result sets are written to `.safe-sql-results/` and opened in the editor (configurable).
+- **4) Results are written locally**: Result sets are written to `.safe-sql-results/` and opened in the editor when running in a supported AI editor (Cursor, Claude Code, Codex, Gemini).
 - **5) LLM receives metadata only**: The MCP tool response is formatted to avoid including raw query results in the response payload.
 - **6) Logging remains local**: Operational logs and diagnostic details are written locally.
 
@@ -119,14 +125,14 @@ capybara-db-mcp is a zero-dependency, token-efficient MCP server implementing th
 
 **Read-only enforcement**: Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). UPDATE, DELETE, INSERT, and other write operations fail at the connection level. This reduces the risk of accidental writes but does not replace database-level RBAC or permissions configuration.
 
-**Output isolation controls**: By default, query results are written to local files (`.safe-sql-results/`) and opened in the editor; tool responses are formatted to avoid returning result sets. Error responses return generic messages only (e.g. "Execution failed. See server logs for details."); no SQL, parameter values, or database error text are returned. Logs never include SQL or parameter values. These mechanisms are designed to reduce LLM data exposure risk when used appropriately, and do not constitute regulatory compliance or replace enterprise data governance and DLP controls.
+**Output isolation controls**: By default, query results are written to local files (`.safe-sql-results/`) and opened in the editor when running in a supported client (Cursor, Claude Code, Codex, Gemini); tool responses are formatted to avoid returning result sets. Error responses return generic messages only (e.g. "Execution failed. See server logs for details."); no SQL, parameter values, or database error text are returned. Logs never include SQL or parameter values. These mechanisms are designed to reduce LLM data exposure risk when used appropriately, and do not constitute regulatory compliance or replace enterprise data governance and DLP controls.
 
 - **Local Development First**: Zero dependency, token efficient with just two MCP tools to maximize context window
 - **Multi-Database**: PostgreSQL, MySQL, MariaDB, SQL Server, and SQLite through a single interface
 - **Multi-Connection**: Connect to multiple databases simultaneously with TOML configuration
 - **Default schema**: Use `--schema` (or TOML `schema = "..."`) so PostgreSQL uses that schema for `execute_sql` and `search_objects` is restricted to it (see below)
 - **Guardrails**: Connector-level read-only connections, row limiting, and a 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to reduce runaway operations
-- **Designed to reduce LLM data exposure**: Results are written to `.safe-sql-results/` and opened in the editor; tool responses return only success/failure metadata (no file path, row data, row counts, or column names). Error responses use generic messages only; no SQL, parameter values, or database error text reach the client. Logs are redacted to avoid SQL and parameter values.
+- **Designed to reduce LLM data exposure**: Results are written to `.safe-sql-results/` and opened only in supported editors (Cursor, Claude Code, Codex, Gemini); tool responses return only success/failure metadata (no file path, row data, row counts, or column names). Error responses use generic messages only; no SQL, parameter values, or database error text reach the client. Logs are redacted to avoid SQL and parameter values.
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
 ## Why Capybara?
@@ -187,7 +193,7 @@ Full DBHub docs (including TOML and command-line options) apply; see [dbhub.ai](
 
 ### Output isolation (designed to reduce LLM exposure)
 
-By default, `execute_sql` writes query results to `.safe-sql-results/` in your project directory and opens them in the editor. The MCP tool response sent back to the MCP client is formatted to return success/failure metadata rather than result sets. This reduces the likelihood of transmitting result data to an LLM, but it does not eliminate data handling risk and does not by itself satisfy regulatory or compliance requirements.
+By default, `execute_sql` writes query results to `.safe-sql-results/` in your project directory and opens them in the editor when running in a supported AI editor (Cursor, Claude Code, Codex, Gemini). The MCP tool response sent back to the MCP client is formatted to return success/failure metadata rather than result sets. This reduces the likelihood of transmitting result data to an LLM, but it does not eliminate data handling risk and does not by itself satisfy regulatory or compliance requirements.
 
 To reduce exfiltration risk via dynamic SQL (e.g. `SELECT secret AS "password_is_hunter2"`), tool responses are formatted to avoid including file paths, row data, row counts, or column names. Error responses return generic messages only (e.g. "Execution failed. See server logs for details."); no SQL, parameter values, or database error text are returned. Logs never include SQL or parameter values.
 

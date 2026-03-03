@@ -2,7 +2,10 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import { bigIntReplacer } from "./response-formatter.js";
-import { getEditorCommand } from "../config/editor-command.js";
+import {
+  getEditorCommand,
+  isOpeningResultsSupported,
+} from "../config/editor-command.js";
 
 export type ResultFormat = "csv" | "json" | "markdown";
 
@@ -105,11 +108,18 @@ export function writeResultFile(
 
   fs.writeFileSync(filePath, content, "utf-8");
   const resolvedPath = path.resolve(filePath);
-  const editorCmd = getEditorCommand();
-  exec(`${editorCmd} "${resolvedPath}"`, { timeout: 5000 }, (error) => {
-    if (error) {
-      console.error(`[result-writer] Failed to open result file in editor: ${error.message}`);
-    }
-  });
+
+  if (isOpeningResultsSupported()) {
+    const editorCmd = getEditorCommand();
+    exec(`${editorCmd} "${resolvedPath}"`, { timeout: 5000 }, (error) => {
+      if (error) {
+        console.error(`[result-writer] Failed to open result file in editor: ${error.message}`);
+      }
+    });
+  } else {
+    console.error(
+      "[result-writer] Result written to .safe-sql-results/ (not opened — client does not support secure result handling)"
+    );
+  }
   return resolvedPath;
 }
