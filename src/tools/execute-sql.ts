@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { ConnectorManager } from "../connectors/manager.js";
-import { createPiiSafeToolResponse, createToolErrorResponse, createGenericToolErrorResponse } from "../utils/response-formatter.js";
+import { createPiiSafeToolResponse, createGenericToolErrorResponse } from "../utils/response-formatter.js";
 import { writeResultFile } from "../utils/result-writer.js";
 import { getOutputFormat } from "../config/output-format.js";
-import { isReadOnlySQL, allowedKeywords } from "../utils/allowed-keywords.js";
-import { ConnectorType } from "../connectors/interface.js";
 import { getToolRegistry } from "./registry.js";
 import { BUILTIN_TOOL_EXECUTE_SQL } from "./builtin-tools.js";
 import {
@@ -16,29 +14,6 @@ import {
 export const executeSqlSchema = {
   sql: z.string().describe("SQL to execute (multiple statements separated by ;)"),
 };
-
-/**
- * Split SQL string into individual statements, handling semicolons properly
- * @param sql The SQL string to split
- * @returns Array of individual SQL statements
- */
-function splitSQLStatements(sql: string): string[] {
-  // Split by semicolon and filter out empty statements
-  return sql.split(';')
-    .map(statement => statement.trim())
-    .filter(statement => statement.length > 0);
-}
-
-/**
- * Check if all SQL statements in a multi-statement query are read-only
- * @param sql The SQL string (possibly containing multiple statements)
- * @param connectorType The database type to check against
- * @returns True if all statements are read-only
- */
-function areAllStatementsReadOnly(sql: string, connectorType: ConnectorType): boolean {
-  const statements = splitSQLStatements(sql);
-  return statements.every(statement => isReadOnlySQL(statement, connectorType));
-}
 
 /**
  * Create an execute_sql tool handler for a specific source
@@ -66,18 +41,8 @@ export function createExecuteSqlToolHandler(sourceId?: string) {
       const registry = getToolRegistry();
       const toolConfig = registry.getBuiltinToolConfig(BUILTIN_TOOL_EXECUTE_SQL, actualSourceId);
 
-      // Check if SQL is allowed based on readonly mode (per-tool); default is read-only (omit === true)
-      const isReadonly = toolConfig?.readonly !== false;
-      if (isReadonly && !areAllStatementsReadOnly(sql, connector.id)) {
-        errorMessage = `Read-only mode is enabled. Only the following SQL operations are allowed: ${allowedKeywords[connector.id]?.join(", ") || "none"}`;
-        success = false;
-        return createToolErrorResponse(errorMessage, "READONLY_VIOLATION");
-      }
-
-      // Execute the SQL (single or multiple statements) if validation passed
-      // Pass readonly and maxRows from tool config (if set)
+      // Execute the SQL (connector-level read-only enforced by manager)
       const executeOptions = {
-        readonly: toolConfig?.readonly,
         maxRows: toolConfig?.max_rows,
       };
       result = await connector.executeSQL(sql, executeOptions);

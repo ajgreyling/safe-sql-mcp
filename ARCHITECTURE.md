@@ -54,7 +54,6 @@ flowchart TB
     end
 
     subgraph Checks["PII Safety Checks (where applied)"]
-        C1["① Read-only SQL validation<br/>(allowed-keywords.ts)"]
         C2["② Connector-level readonly<br/>(PostgreSQL/SQLite)"]
         C3["③ Result isolation<br/>(writeResultFile + createPiiSafeToolResponse)"]
         C4["④ Generic errors only<br/>(createGenericToolErrorResponse)"]
@@ -80,11 +79,10 @@ flowchart TB
     Tools --> ExecuteSQL
     Tools --> SearchObjects
 
-    ExecuteSQL --> C1
     ExecuteSQL --> C2
     SearchObjects --> C6
 
-    ExecuteSQL -->|"SQL validated"| Connector
+    ExecuteSQL --> Connector
     SearchObjects -->|"Schema queries"| Connector
 
     Connector -->|"rows"| LocalFile
@@ -114,8 +112,7 @@ flowchart TB
 
 | # | Check | Location | Purpose |
 |---|-------|----------|---------|
-| ① | Read-only SQL validation | `allowed-keywords.ts`, tool handlers | Blocks INSERT/UPDATE/DELETE, writable CTEs, `EXPLAIN ANALYZE` writes, `SELECT INTO OUTFILE` |
-| ② | Connector-level readonly | `manager.ts`, PostgreSQL/SQLite | `config.readonly = true` at connection; enforces `default_transaction_read_only` or file readonly |
+| ② | Connector-level readonly | `manager.ts`, PostgreSQL/SQLite | `config.readonly = true` at connection; enforces `default_transaction_read_only` or file readonly. Write operations fail at DB level. |
 | ③ | Result isolation | `result-writer.ts`, `response-formatter.ts` | Rows written to `.safe-sql-results/`; tool response returns `{ success: true, data: {} }` only |
 | ④ | Generic errors | `response-formatter.ts`, all tool handlers | "Execution failed. See server logs for details." — no DB error text, SQL, or params |
 | ⑤ | Log redaction | Tool handlers, connectors | Stderr logs: `[tool] Execution failed` — never SQL or parameter values |
@@ -144,8 +141,7 @@ src/
 ├── utils/
 │   ├── response-formatter.ts  # createPiiSafeToolResponse, createGenericToolErrorResponse
 │   ├── result-writer.ts       # Writes to .safe-sql-results/
-│   ├── allowed-keywords.ts    # Read-only SQL classification
-│   ├── sql-parser.ts          # stripCommentsAndStrings for safe keyword detection
+│   ├── sql-parser.ts          # stripCommentsAndStrings (used by sql-row-limiter)
 │   ├── tool-handler-helpers.ts # trackToolRequest (redacts sql/error)
 │   └── dsn-obfuscator.ts      # DSN redaction for logs
 ├── requests/             # In-memory request tracking
@@ -247,11 +243,7 @@ Implementation: `src/server.ts`, `src/config/env.ts` (`resolveBindAddress`).
 
 **Files:** `src/utils/tool-handler-helpers.ts`, `src/api/requests.ts`, `src/requests/store.ts`.
 
-### 6. Read-Only Validation and Bypass Prevention
-
-See [Read-Only Enforcement](#read-only-enforcement).
-
-### 7. Connector-Level Read-Only
+### 6. Connector-Level Read-Only
 
 See [Read-Only Enforcement](#read-only-enforcement).
 
@@ -259,33 +251,17 @@ See [Read-Only Enforcement](#read-only-enforcement).
 
 ## Read-Only Enforcement
 
-### Application-Level Validation (`allowed-keywords.ts`)
-
-| Check | Description |
-|-------|-------------|
-| **First keyword** | Must be in allowlist: `select`, `with`, `explain`, `analyze`, `show`, `describe`, `pragma`, `showplan` (DB-specific). |
-| **Forbidden keywords (full statement)** | Regex blocks: `insert`, `update`, `delete`, `merge`, `replace`, `drop`, `create`, `alter`, `truncate` anywhere (including in CTEs or after `EXPLAIN`). |
-| **MySQL/MariaDB** | `INTO OUTFILE` and `INTO DUMPFILE` are blocked. |
-
-SQL is normalized with `stripCommentsAndStrings()` before checks to avoid false positives from literals or comments.
-
-**Bypass prevention examples:**
-
-- `WITH x AS (DELETE FROM users RETURNING id) SELECT * FROM x` → rejected (DELETE in CTE).
-- `EXPLAIN ANALYZE DELETE FROM users` → rejected.
-- `SELECT * FROM t INTO OUTFILE '/tmp/x'` → rejected (MySQL).
-
-### Connector-Level Read-Only (Defense in Depth)
+Connections are opened in read-only mode. UPDATE, DELETE, INSERT, MERGE, and other write operations fail at the database level (e.g., `ERROR: cannot execute UPDATE in a read-only transaction` for PostgreSQL).
 
 | Connector | Mechanism |
 |-----------|-----------|
 | **PostgreSQL** | `config.readonly = true` → appends `-c default_transaction_read_only=on` to connection options. |
 | **SQLite** | `config.readonly = true` → opens file-based DBs with `readonly: true` (skipped for `:memory:`). |
-| **MySQL/MariaDB/SQL Server** | No SDK-level readonly; application-level validation is the primary control. |
+| **MySQL/MariaDB/SQL Server** | No SDK-level readonly; rely on database user permissions and RBAC. |
 
 `ConnectorManager.connectSource()` unconditionally sets `config.readonly = true` when calling `connector.connect()`.
 
-**Files:** `src/utils/allowed-keywords.ts`, `src/utils/sql-parser.ts`, `src/connectors/manager.ts`, `src/connectors/postgres/index.ts`, `src/connectors/sqlite/index.ts`.
+**Files:** `src/connectors/manager.ts`, `src/connectors/postgres/index.ts`, `src/connectors/sqlite/index.ts`.
 
 ---
 
@@ -340,7 +316,6 @@ Key PII-related settings:
 
 - `--bind` / `BIND_ADDRESS`: default `127.0.0.1`.
 - `--output-format`: `csv`, `json`, or `markdown` for result files.
-- Tool config: `readonly` is always enforced (this fork rejects `readonly = false`).
 
 ---
 

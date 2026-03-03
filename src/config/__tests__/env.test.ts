@@ -365,7 +365,7 @@ describe('Environment Configuration Tests', () => {
       exitSpy.mockRestore();
     });
 
-    it('should include execute_sql with readonly true (single-DSN, always read-only)', async () => {
+    it('should include execute_sql and search_objects tools (single-DSN)', async () => {
       process.argv = ['node', 'script.js', '--dsn=postgres://u:p@localhost:5432/db'];
 
       const result = await import('../env.js').then(m => m.resolveSourceConfigs());
@@ -374,7 +374,7 @@ describe('Environment Configuration Tests', () => {
       expect(result!.tools).toHaveLength(2);
       const executeSql = result!.tools!.find((t) => t.name === 'execute_sql');
       expect(executeSql).toBeDefined();
-      expect(executeSql!.readonly).toBe(true);
+      expect(executeSql!.source).toBeDefined();
       expect(result!.tools!.find((t) => t.name === 'search_objects')).toBeDefined();
     });
   });

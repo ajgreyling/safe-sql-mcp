@@ -3,8 +3,6 @@
  * Shared utilities for MCP tool handlers to reduce boilerplate
  */
 
-import { ConnectorType } from "../connectors/interface.js";
-import { isReadOnlySQL, allowedKeywords } from "./allowed-keywords.js";
 import { requestStore } from "../requests/index.js";
 import { getClientIdentifier } from "./client-identifier.js";
 
@@ -24,27 +22,6 @@ export interface RequestMetadata {
  */
 export function getEffectiveSourceId(sourceId?: string): string {
   return sourceId || "default";
-}
-
-/**
- * Re-export isReadOnlySQL for readonly mode validation
- * Checks if SQL statement is read-only (SELECT, WITH, etc.)
- */
-export { isReadOnlySQL as isAllowedInReadonlyMode };
-
-/**
- * Create a readonly violation error message
- * @param toolName Tool name for error message
- * @param sourceId Source ID for error message
- * @param connectorType Database connector type
- * @returns Formatted error message
- */
-export function createReadonlyViolationMessage(
-  toolName: string,
-  sourceId: string,
-  connectorType: ConnectorType
-): string {
-  return `Tool '${toolName}' cannot execute in readonly mode for source '${sourceId}'. Only read-only SQL operations are allowed: ${allowedKeywords[connectorType]?.join(", ") || "none"}`;
 }
 
 /** Sentinel for redacted sensitive fields in request telemetry (PII-safe). */

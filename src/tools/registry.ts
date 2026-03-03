@@ -48,7 +48,7 @@ export class ToolRegistry {
       if (!registry.has(source.id)) {
         const defaultTools: ToolConfig[] = BUILTIN_TOOLS.map((name) => {
           if (name === "execute_sql") {
-            return { name: "execute_sql", source: source.id, readonly: true } satisfies ExecuteSqlToolConfig;
+            return { name: "execute_sql", source: source.id } satisfies ExecuteSqlToolConfig;
           } else {
             return { name: "search_objects", source: source.id } satisfies SearchObjectsToolConfig;
           }

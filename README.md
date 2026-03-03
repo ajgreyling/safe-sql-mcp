@@ -11,7 +11,7 @@ This project is intended for development, sandbox, or formally reviewed environm
 
 This project is designed to reduce the likelihood of exposing query results to LLMs, but it does not replace enterprise security controls and should not be used to bypass governance processes.
 
-**capybara-db-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). The key difference: **DBHub sends query results (rows, columns, counts) directly to the LLM**, which can expose sensitive data. capybara-db-mcp is designed to reduce the likelihood of exposing query results to LLMs by writing results to local files, opening them in the editor, and returning status-oriented metadata to the MCP client instead of result sets. It also implements SQL validation intended to restrict execution to read-only statements, keeps the same internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups.
+**capybara-db-mcp** is a community fork of [DBHub](https://github.com/bytebase/dbhub) by [Bytebase](https://www.bytebase.com/). The key difference: **DBHub sends query results (rows, columns, counts) directly to the LLM**, which can expose sensitive data. capybara-db-mcp is designed to reduce the likelihood of exposing query results to LLMs by writing results to local files, opening them in the editor, and returning status-oriented metadata to the MCP client instead of result sets. It uses connector-level read-only connections (PostgreSQL, SQLite), keeps the same internal names (e.g. `dbhub.toml`) for easy merging from upstream, and adds **default-schema support** for PostgreSQL and multi-database setups.
 
 - **Original project:** [github.com/bytebase/dbhub](https://github.com/bytebase/dbhub)
 - **This fork:** [github.com/ajgreyling/capybara-db-mcp](https://github.com/ajgreyling/capybara-db-mcp)
@@ -72,8 +72,8 @@ flowchart LR
 capybara-db-mcp is designed to reduce the likelihood of transmitting query result data to an LLM by isolating result sets to the local filesystem and returning status-oriented metadata to the MCP client.
 
 - **1) LLM generates SQL**: The MCP client sends an `execute_sql` request containing SQL text.
-- **2) Server validates SQL**: The server performs SQL validation intended to restrict execution to read-only statements (e.g., SELECT, WITH, EXPLAIN, SHOW).
-- **3) Query executes against the database**: The validated query runs using the configured connector.
+- **2) Connector is read-only**: Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). Write attempts fail at the database level.
+- **3) Query executes against the database**: The query runs using the configured connector.
 - **4) Results are written locally**: Result sets are written to `.safe-sql-results/` and opened in the editor (configurable).
 - **5) LLM receives metadata only**: The MCP tool response is formatted to avoid including raw query results in the response payload.
 - **6) Logging remains local**: Operational logs and diagnostic details are written locally.
@@ -117,7 +117,7 @@ flowchart TB
 
 capybara-db-mcp is a zero-dependency, token-efficient MCP server implementing the Model Context Protocol (MCP). It supports the same features as DBHub, plus a default schema.
 
-**Read-only enforcement**: The server implements SQL validation intended to restrict execution to read-only statements (e.g., SELECT, WITH, EXPLAIN, SHOW). This enforcement reduces the risk of accidental writes, but it does not replace database-level RBAC or permissions configuration.
+**Read-only enforcement**: Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). UPDATE, DELETE, INSERT, and other write operations fail at the connection level. This reduces the risk of accidental writes but does not replace database-level RBAC or permissions configuration.
 
 **Output isolation controls**: By default, query results are written to local files (`.safe-sql-results/`) and opened in the editor; tool responses are formatted to avoid returning result sets. Error responses return generic messages only (e.g. "Execution failed. See server logs for details."); no SQL, parameter values, or database error text are returned. Logs never include SQL or parameter values. These mechanisms are designed to reduce LLM data exposure risk when used appropriately, and do not constitute regulatory compliance or replace enterprise data governance and DLP controls.
 
@@ -125,7 +125,7 @@ capybara-db-mcp is a zero-dependency, token-efficient MCP server implementing th
 - **Multi-Database**: PostgreSQL, MySQL, MariaDB, SQL Server, and SQLite through a single interface
 - **Multi-Connection**: Connect to multiple databases simultaneously with TOML configuration
 - **Default schema**: Use `--schema` (or TOML `schema = "..."`) so PostgreSQL uses that schema for `execute_sql` and `search_objects` is restricted to it (see below)
-- **Guardrails**: SQL read-only validation, row limiting, and a 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to reduce runaway operations
+- **Guardrails**: Connector-level read-only connections, row limiting, and a 60-second query timeout default (overridable per source via `query_timeout` in `dbhub.toml`) to reduce runaway operations
 - **Designed to reduce LLM data exposure**: Results are written to `.safe-sql-results/` and opened in the editor; tool responses return only success/failure metadata (no file path, row data, row counts, or column names). Error responses use generic messages only; no SQL, parameter values, or database error text reach the client. Logs are redacted to avoid SQL and parameter values.
 - **Secure Access**: SSH tunneling and SSL/TLS encryption
 
@@ -193,7 +193,7 @@ To reduce exfiltration risk via dynamic SQL (e.g. `SELECT secret AS "password_is
 
 ### Read-only enforcement
 
-The server implements SQL validation intended to restrict execution to read-only statements (e.g., SELECT, WITH, EXPLAIN, SHOW, DESCRIBE). This enforcement is a guardrail and does not substitute for database-level RBAC, permissions, or audit controls.
+Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). UPDATE, DELETE, INSERT, and other write operations fail at the connection level. This is a guardrail and does not substitute for database-level RBAC, permissions, or audit controls.
 
 ## Workbench
 

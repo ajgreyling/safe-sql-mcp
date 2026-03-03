@@ -182,7 +182,7 @@ See documentation for more details on configuring database connections.
     // Print sources and tools table
     const sourceDisplayInfos = buildSourceDisplayInfo(
       sources,
-      (sourceId) => getToolsForSource(sourceId).map((t) => t.readonly ? `🔒 ${t.name}` : t.name),
+      (sourceId) => getToolsForSource(sourceId).map((t) => t.name),
       isDemo
     );
     console.error(generateStartupTable(sourceDisplayInfos));

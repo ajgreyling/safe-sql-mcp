@@ -1,5 +1,6 @@
-# Sources with execution options (readonly, max_rows) configured per-tool
+# Sources with execution options (max_rows) configured per-tool
 # Used for testing query execution constraints
+# Connector-level read-only is always enforced
 
 [[sources]]
 id = "readonly_limited"
@@ -10,7 +11,6 @@ database = ":memory:"
 [[tools]]
 name = "execute_sql"
 source = "readonly_limited"
-readonly = true
 max_rows = 100
 
 [[sources]]
@@ -21,7 +21,6 @@ database = ":memory:"
 [[tools]]
 name = "execute_sql"
 source = "writable_limited"
-readonly = true
 max_rows = 500
 
 [[sources]]

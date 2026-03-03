@@ -22,10 +22,10 @@ describe('Data Sources API Integration Tests', () => {
 
   beforeAll(async () => {
     // Initialize ConnectorManager with readonly-maxrows fixture
-    // This fixture provides 3 SQLite sources with different execution options:
-    // - readonly_limited: readonly=true, max_rows=100
-    // - writable_limited: readonly=true, max_rows=500 (this fork is always read-only)
-    // - writable_unlimited: default tools (readonly=true), no max_rows
+    // This fixture provides 3 SQLite sources with different max_rows:
+    // - readonly_limited: max_rows=100
+    // - writable_limited: max_rows=500
+    // - writable_unlimited: default tools, no max_rows
     manager = await setupManagerWithFixture(FIXTURES.READONLY_MAXROWS);
 
     // Initialize ToolRegistry with fixture config
@@ -93,19 +93,16 @@ describe('Data Sources API Integration Tests', () => {
       const response = await fetch(`${BASE_URL}/api/sources`);
       const sources = (await response.json()) as DataSource[];
 
-      // First source has execute_sql tool with readonly and max_rows
+      // First source has execute_sql tool with max_rows
       const firstExecuteSql = sources[0].tools.find(t => t.name.startsWith('execute_sql'));
-      expect(firstExecuteSql?.readonly).toBe(true);
       expect(firstExecuteSql?.max_rows).toBe(100);
 
-      // Second source has execute_sql tool with different settings (max_rows only)
+      // Second source has execute_sql tool with different max_rows
       const secondExecuteSql = sources[1].tools.find(t => t.name.startsWith('execute_sql'));
-      expect(secondExecuteSql?.readonly).toBe(true);
       expect(secondExecuteSql?.max_rows).toBe(500);
 
-      // Third source gets default tools (read-only by default)
+      // Third source gets default tools (no max_rows)
       const thirdExecuteSql = sources[2].tools.find(t => t.name.startsWith('execute_sql'));
-      expect(thirdExecuteSql?.readonly).toBe(true);
       expect(thirdExecuteSql?.max_rows).toBeUndefined();
     });
 
@@ -235,9 +232,8 @@ describe('Data Sources API Integration Tests', () => {
       expect(source.id).toBe('readonly_limited');
       expect(source.type).toBe('sqlite');
 
-      // Check execute_sql tool has readonly and max_rows
+      // Check execute_sql tool has max_rows
       const executeSql = source.tools.find(t => t.name.startsWith('execute_sql'));
-      expect(executeSql?.readonly).toBe(true);
       expect(executeSql?.max_rows).toBe(100);
     });
 
@@ -248,9 +244,8 @@ describe('Data Sources API Integration Tests', () => {
       const source = (await response.json()) as DataSource;
       expect(source.id).toBe('writable_limited');
 
-      // Check execute_sql tool has readonly and max_rows (this fork is unconditionally read-only)
+      // Check execute_sql tool has max_rows
       const executeSql = source.tools.find(t => t.name.startsWith('execute_sql'));
-      expect(executeSql?.readonly).toBe(true);
       expect(executeSql?.max_rows).toBe(500);
     });
 

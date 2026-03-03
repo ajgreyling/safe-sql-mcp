@@ -24,7 +24,6 @@ export interface Tool {
   name: string;
   description: string;
   parameters: ToolParameter[];
-  readonly?: boolean;
   max_rows?: number;
 }
 
@@ -89,7 +88,7 @@ export function getExecuteSqlMetadata(sourceId: string): ToolMetadata {
   const dbType = sourceConfig.type;
   const isSingleSource = sourceIds.length === 1;
 
-  // Get tool configuration from registry to extract max_rows (readonly is always enforced)
+  // Get tool configuration from registry to extract max_rows
   const registry = getToolRegistry();
   const toolConfig = registry.getBuiltinToolConfig(BUILTIN_TOOL_EXECUTE_SQL, sourceId);
   const maxRows = toolConfig?.max_rows;
@@ -102,14 +101,13 @@ export function getExecuteSqlMetadata(sourceId: string): ToolMetadata {
     ? `Execute SQL (${dbType})`
     : `Execute SQL on ${sourceId} (${dbType})`;
 
-  // Determine description (always read-only in this fork)
-  const readonlyNote = " [READ-ONLY MODE]";
+  // Determine description (connector-level read-only enforced)
   const maxRowsNote = maxRows ? ` (limited to ${maxRows} rows)` : "";
   const description = isSingleSource
-    ? `Execute SQL queries on the ${dbType} database${readonlyNote}${maxRowsNote}`
-    : `Execute SQL queries on the '${sourceId}' ${dbType} database${readonlyNote}${maxRowsNote}`;
+    ? `Execute SQL queries on the ${dbType} database${maxRowsNote}`
+    : `Execute SQL queries on the '${sourceId}' ${dbType} database${maxRowsNote}`;
 
-  // Build annotations object with all standard MCP hints (always read-only)
+  // Build annotations object with MCP hints
   const annotations = {
     title,
     readOnlyHint: true,
@@ -161,14 +159,13 @@ function buildExecuteSqlTool(sourceId: string, toolConfig?: ToolConfig): Tool {
   const executeSqlMetadata = getExecuteSqlMetadata(sourceId);
   const executeSqlParameters = zodToParameters(executeSqlMetadata.schema);
 
-  // Extract max_rows from toolConfig (readonly is always true in this fork)
+  // Extract max_rows from toolConfig
   const max_rows = toolConfig && 'max_rows' in toolConfig ? toolConfig.max_rows : undefined;
 
   return {
     name: executeSqlMetadata.name,
     description: executeSqlMetadata.description,
     parameters: executeSqlParameters,
-    readonly: true,
     max_rows,
   };
 }
@@ -220,7 +217,6 @@ function buildSearchObjectsTool(sourceId: string): Tool {
         description: "Max results (default: 100, max: 1000)",
       },
     ],
-    readonly: true, // search_objects is always readonly
   };
 }
 

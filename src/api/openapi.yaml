@@ -173,10 +173,6 @@ components:
           description: Tool input parameters
           items:
             $ref: '#/components/schemas/ToolParameter'
-        readonly:
-          type: boolean
-          description: Whether the tool is restricted to read-only operations (execute_sql only)
-          example: true
         max_rows:
           type: integer
           description: Maximum number of rows returned by SELECT queries (execute_sql only)

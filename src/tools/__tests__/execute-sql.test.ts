@@ -79,7 +79,7 @@ describe('execute-sql tool', () => {
         'execute_sql',
         'csv'
       );
-      expect(mockConnector.executeSQL).toHaveBeenCalledWith('SELECT * FROM users', { readonly: undefined, maxRows: undefined });
+      expect(mockConnector.executeSQL).toHaveBeenCalledWith('SELECT * FROM users', { maxRows: undefined });
     });
 
     it('should pass multi-statement SQL directly to connector', async () => {
@@ -92,7 +92,7 @@ describe('execute-sql tool', () => {
       const parsedResult = parseToolResponse(result);
 
       expect(parsedResult.success).toBe(true);
-      expect(mockConnector.executeSQL).toHaveBeenCalledWith(sql, { readonly: undefined, maxRows: undefined });
+      expect(mockConnector.executeSQL).toHaveBeenCalledWith(sql, { maxRows: undefined });
     });
 
     it('should handle execution errors', async () => {
@@ -106,143 +106,6 @@ describe('execute-sql tool', () => {
       expect(parsedResult.success).toBe(false);
       expect(parsedResult.error).toBe('Execution failed. See server logs for details.');
       expect(parsedResult.code).toBe('EXECUTION_ERROR');
-    });
-  });
-
-  describe('read-only mode enforcement (destructive SQL not passed for execution)', () => {
-    // Ensures UPDATE, DELETE, INSERT, and other write operations are never sent to the connector when readonly
-    beforeEach(() => {
-      // Set per-source readonly mode via tool registry (simulates TOML config)
-      mockGetToolRegistry.mockReturnValue({
-        getBuiltinToolConfig: vi.fn().mockReturnValue({ readonly: true }),
-      } as any);
-    });
-
-    it('should allow SELECT statements', async () => {
-      const mockResult: SQLResult = { rows: [{ id: 1 }], rowCount: 1 };
-      vi.mocked(mockConnector.executeSQL).mockResolvedValue(mockResult);
-
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql: 'SELECT * FROM users' }, null);
-      const parsedResult = parseToolResponse(result);
-
-      expect(parsedResult.success).toBe(true);
-      expect(mockConnector.executeSQL).toHaveBeenCalledWith('SELECT * FROM users', { readonly: true, maxRows: undefined });
-    });
-
-    it('should allow multiple read-only statements', async () => {
-      const mockResult: SQLResult = { rows: [], rowCount: 0 };
-      vi.mocked(mockConnector.executeSQL).mockResolvedValue(mockResult);
-
-      const sql = 'SELECT * FROM users; SELECT * FROM roles;';
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql }, null);
-
-      expect(parseToolResponse(result).success).toBe(true);
-    });
-
-    it.each([
-      ['INSERT', "INSERT INTO users (name) VALUES ('test')"],
-      ['UPDATE', "UPDATE users SET name = 'x' WHERE id = 1"],
-      ['DELETE', "DELETE FROM users WHERE id = 1"],
-      ['MERGE', "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET t.x = s.x"],
-      ['DROP', "DROP TABLE users"],
-      ['CREATE', "CREATE TABLE test (id INT)"],
-      ['ALTER', "ALTER TABLE users ADD COLUMN email VARCHAR(255)"],
-      ['TRUNCATE', "TRUNCATE TABLE users"],
-    ])('should reject %s statement', async (_, sql) => {
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql }, null);
-
-      expect(result.isError).toBe(true);
-      const parsedResult = parseToolResponse(result);
-      expect(parsedResult.code).toBe('READONLY_VIOLATION');
-      expect(mockConnector.executeSQL).not.toHaveBeenCalled();
-    });
-
-    it('should not pass any destructive statement to connector for execution', async () => {
-      const destructiveStatements = [
-        "INSERT INTO users (name) VALUES ('test')",
-        "UPDATE users SET name = 'x' WHERE id = 1",
-        "DELETE FROM users WHERE id = 1",
-      ];
-      const handler = createExecuteSqlToolHandler('test_source');
-      for (const sql of destructiveStatements) {
-        vi.mocked(mockConnector.executeSQL).mockClear();
-        const result = await handler({ sql }, null);
-        expect(result.isError).toBe(true);
-        expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
-        expect(mockConnector.executeSQL).not.toHaveBeenCalled();
-      }
-    });
-
-    it('should reject multi-statement with any write operation', async () => {
-      const sql = "SELECT * FROM users; INSERT INTO users (name) VALUES ('test');";
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql }, null);
-
-      expect(result.isError).toBe(true);
-      expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
-    });
-
-  });
-
-  describe('readonly per-source isolation', () => {
-    // Verifies readonly is enforced per-source from tool registry; default (undefined) is read-only
-
-    it('should reject writes when readonly is undefined (default read-only)', async () => {
-      mockGetToolRegistry.mockReturnValue({
-        getBuiltinToolConfig: vi.fn().mockReturnValue({}),
-      } as any);
-
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql: "INSERT INTO users (name) VALUES ('test')" }, null);
-
-      expect(result.isError).toBe(true);
-      expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
-      expect(mockConnector.executeSQL).not.toHaveBeenCalled();
-    });
-
-    it('should enforce readonly even with other options set', async () => {
-      mockGetToolRegistry.mockReturnValue({
-        getBuiltinToolConfig: vi.fn().mockReturnValue({ readonly: true, max_rows: 100 }),
-      } as any);
-
-      const handler = createExecuteSqlToolHandler('limited_source');
-      const result = await handler({ sql: "DELETE FROM users" }, null);
-
-      expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
-    });
-  });
-
-  describe('SQL comments handling in readonly mode', () => {
-    beforeEach(() => {
-      mockGetToolRegistry.mockReturnValue({
-        getBuiltinToolConfig: vi.fn().mockReturnValue({ readonly: true }),
-      } as any);
-    });
-
-    it.each([
-      ['single-line comment', '-- Fetch users\nSELECT * FROM users'],
-      ['multi-line comment', '/* Fetch all */\nSELECT * FROM products'],
-      ['inline comments', 'SELECT id, -- user id\n       name FROM users'],
-      ['only comments', '-- Just a comment\n/* Another */'],
-    ])('should allow SELECT with %s', async (_, sql) => {
-      const mockResult: SQLResult = { rows: [], rowCount: 0 };
-      vi.mocked(mockConnector.executeSQL).mockResolvedValue(mockResult);
-
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql }, null);
-
-      expect(parseToolResponse(result).success).toBe(true);
-    });
-
-    it('should reject write statement hidden after comment', async () => {
-      const sql = '-- Insert new user\nINSERT INTO users (name) VALUES (\'test\')';
-      const handler = createExecuteSqlToolHandler('test_source');
-      const result = await handler({ sql }, null);
-
-      expect(parseToolResponse(result).code).toBe('READONLY_VIOLATION');
     });
   });
 

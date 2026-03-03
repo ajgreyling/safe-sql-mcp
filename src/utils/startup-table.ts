@@ -9,7 +9,6 @@ export interface SourceDisplayInfo {
   type: string;
   host: string;
   database: string;
-  readonly: boolean;
   isDemo: boolean;
   tools: string[];
 }
@@ -108,12 +107,7 @@ export function generateStartupTable(sources: SourceDisplayInfo[]): string {
   );
   const modeWidth = Math.max(
     10,
-    ...sources.map((s) => {
-      const modes: string[] = [];
-      if (s.isDemo) modes.push("DEMO");
-      if (s.readonly) modes.push("READ-ONLY");
-      return modes.join(" ").length;
-    })
+    ...sources.map((s) => (s.isDemo ? "DEMO" : "").length)
   );
 
   // Total width: left border (1) + space + idTypeWidth + space + separator (1) + space + hostDbWidth + space + separator (1) + space + modeWidth + space + right border (1)
@@ -140,10 +134,7 @@ export function generateStartupTable(sources: SourceDisplayInfo[]): string {
     );
 
     // Mode indicators
-    const modes: string[] = [];
-    if (source.isDemo) modes.push("DEMO");
-    if (source.readonly) modes.push("READ-ONLY");
-    const modeStr = fitString(modes.join(" "), modeWidth);
+    const modeStr = fitString(source.isDemo ? "DEMO" : "", modeWidth);
 
     lines.push(
       `${BOX.vertical} ${idType} ${BOX.vertical} ${hostDb} ${BOX.vertical} ${modeStr} ${BOX.vertical}`
@@ -187,7 +178,6 @@ export function buildSourceDisplayInfo(
       type: source.type || "sqlite",
       host,
       database,
-      readonly: source.readonly || false,
       isDemo,
       tools: getToolsForSource(source.id),
     };

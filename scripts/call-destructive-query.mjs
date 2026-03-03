@@ -2,7 +2,7 @@
 /**
  * One-off script: start DBHub with dbhub-sams-staging config (HTTP), call
  * execute_sql with a destructive query, print the result. Used to verify
- * readonly enforcement (expect READONLY_VIOLATION when readonly=true).
+ * connector-level read-only enforcement (expect DB error; writes are blocked at connection level).
  * Reads server args from .cursor/mcp.json; does not modify it.
  */
 

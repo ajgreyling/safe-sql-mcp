@@ -192,11 +192,11 @@ function validateToolsConfig(
       );
     }
 
-    // Only execute_sql can have readonly and max_rows
-    if (!isExecuteSql && (tool.readonly !== undefined || tool.max_rows !== undefined)) {
+    // Only execute_sql can have max_rows
+    if (!isExecuteSql && tool.max_rows !== undefined) {
       throw new Error(
-        `Configuration file ${configPath}: tool '${tool.name}' cannot have readonly or max_rows fields ` +
-          `(these are only valid for ${BUILTIN_TOOL_EXECUTE_SQL} tool)`
+        `Configuration file ${configPath}: tool '${tool.name}' cannot have max_rows field ` +
+          `(only valid for ${BUILTIN_TOOL_EXECUTE_SQL} tool)`
       );
     }
 
@@ -207,22 +207,6 @@ function validateToolsConfig(
           `Configuration file ${configPath}: tool '${tool.name}' has invalid max_rows. Must be a positive integer.`
         );
       }
-    }
-
-    // Validate readonly if provided
-    if (tool.readonly !== undefined && typeof tool.readonly !== "boolean") {
-      throw new Error(
-        `Configuration file ${configPath}: tool '${tool.name}' has invalid readonly. Must be a boolean (true or false).`
-      );
-    }
-
-    // Reject readonly = false: this fork is unconditionally read-only
-    if (tool.readonly === false) {
-      throw new Error(
-        `Configuration file ${configPath}: tool '${tool.name}' has readonly = false, ` +
-          `but this fork (capybara-db-mcp) is unconditionally read-only. ` +
-          `Remove the readonly field or set it to true.`
-      );
     }
   }
 }
@@ -357,13 +341,7 @@ function validateSourceConfig(source: SourceConfig, configPath: string): void {
     }
   }
 
-  // Reject readonly and max_rows at source level (they should be set on tools instead)
-  if ((source as any).readonly !== undefined) {
-    throw new Error(
-      `Configuration file ${configPath}: source '${source.id}' has 'readonly' field, but readonly must be configured per-tool, not per-source. ` +
-        `Move 'readonly' to [[tools]] configuration instead.`
-    );
-  }
+  // Reject max_rows at source level (must be set on tools instead)
   if ((source as any).max_rows !== undefined) {
     throw new Error(
       `Configuration file ${configPath}: source '${source.id}' has 'max_rows' field, but max_rows must be configured per-tool, not per-source. ` +

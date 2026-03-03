@@ -99,20 +99,6 @@ export function loadEnvFiles(): string | null {
       dotenv.config({ path: envPath });
 
       // Check for deprecated environment variables
-      if (process.env.READONLY !== undefined) {
-        console.error("\nERROR: READONLY environment variable is no longer supported.");
-        console.error("Use dbhub.toml with [[tools]] configuration instead:\n");
-        console.error("  [[sources]]");
-        console.error("  id = \"default\"");
-        console.error("  dsn = \"...\"\n");
-        console.error("  [[tools]]");
-        console.error("  name = \"execute_sql\"");
-        console.error("  source = \"default\"");
-        console.error("  readonly = true\n");
-        console.error("See https://dbhub.ai/tools/execute-sql#read-only-mode for details.\n");
-        process.exit(1);
-      }
-
       if (process.env.MAX_ROWS !== undefined) {
         console.error("\nERROR: MAX_ROWS environment variable is no longer supported.");
         console.error("Use dbhub.toml with [[tools]] configuration instead:\n");
@@ -667,9 +653,8 @@ export async function resolveSourceConfigs(): Promise<{ sources: SourceConfig[];
       source.init_script = getSqliteInMemorySetupSql();
     }
 
-    // Always read-only; this fork unconditionally disallows write operations.
     const tools: ToolConfig[] = [
-      { name: "execute_sql", source: sourceId, readonly: true },
+      { name: "execute_sql", source: sourceId },
       { name: "search_objects", source: sourceId },
     ];
 

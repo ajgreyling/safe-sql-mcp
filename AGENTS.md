@@ -23,7 +23,7 @@ The core design is intended to reduce the likelihood of transmitting query resul
 - **Generic errors**: Execution and search errors return generic messages only (`Execution failed. See server logs for details.`); no SQL, parameter values, or DB error text are returned to the client. See `createGenericToolErrorResponse` in `src/utils/response-formatter.ts`.
 - **Log redaction**: Stderr logs do not include SQL statements or parameter values; only tool name and status are logged.
 - **search_objects**: Returns names only (summary/full detail levels disabled) to avoid leaking schema metadata.
-- **Read-only bypass prevention**: SQL validation rejects writable CTEs, `EXPLAIN ANALYZE` writes, and `SELECT INTO OUTFILE`; connector-level read-only is enforced for PostgreSQL and SQLite. See `src/utils/allowed-keywords.ts`.
+- **Connector-level read-only**: PostgreSQL and SQLite connections are opened in read-only mode; write operations fail at the database level. See `src/connectors/manager.ts`, `src/connectors/postgres/index.ts`, `src/connectors/sqlite/index.ts`.
 - **Request telemetry**: `/api/requests` redacts SQL and error text in responses; `trackToolRequest` stores only `[redacted]` for those fields.
 - **HTTP defaults**: Bind address defaults to `127.0.0.1`; CORS uses a strict allowlist. Use `--bind=0.0.0.0` for network access.
 
@@ -47,7 +47,7 @@ Agents interacting with this MCP server are expected to:
 
 ## Read-only enforcement
 
-This fork implements SQL validation intended to restrict execution to read-only statements (e.g., SELECT, WITH, EXPLAIN, SHOW). This enforcement reduces the risk of accidental writes but does not replace database-level RBAC, permissions, or auditing.
+Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). UPDATE, DELETE, INSERT, and other write operations fail at the connection level. This reduces the risk of accidental writes but does not replace database-level RBAC, permissions, or auditing.
 
 ### Output isolation (designed to reduce LLM exposure)
 
@@ -80,8 +80,7 @@ src/
 ├── utils/               # Shared utilities
 │   ├── dsn-obfuscator.ts# DSN security
 │   ├── response-formatter.ts # Output formatting (createPiiSafeToolResponse)
-│   ├── result-writer.ts # Writes query results to .safe-sql-results/
-│   └── allowed-keywords.ts  # Read-only SQL validation
+│   └── result-writer.ts # Writes query results to .safe-sql-results/
 └── index.ts             # Entry point with transport handling
 ```
 
@@ -135,7 +134,7 @@ DBHub supports three configuration methods (in priority order):
   user = "root"
   password = "secret"
 
-  # Tool configuration: read-only enforcement is applied by SQL validation
+  # Tool configuration: connector-level read-only is always enforced
   [[tools]]
   name = "execute_sql"
   source = "prod_pg"
@@ -148,7 +147,7 @@ DBHub supports three configuration methods (in priority order):
 - Features:
   - Per-source settings: SSH tunnels, timeouts, SSL configuration
   - Query timeout: Defaults to 60 seconds for all non-SQLite connectors; override with `query_timeout = N` (seconds) in a `[[sources]]` block
-  - Per-tool settings: `max_rows` (configured in `[[tools]]` section, not `[[sources]]`). This fork enforces read-only behavior via SQL validation; `readonly = false` is rejected.
+  - Per-tool settings: `max_rows` (configured in `[[tools]]` section, not `[[sources]]`). Connector-level read-only is always enforced.
   - Path expansion for `~/` in file paths
   - Automatic password redaction in logs
   - First source is the default database

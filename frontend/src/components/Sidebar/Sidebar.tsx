@@ -2,7 +2,6 @@ import { Link, useParams } from 'react-router-dom';
 import Logo from './Logo';
 import { cn } from '../../lib/utils';
 import type { DataSource } from '../../types/datasource';
-import LockIcon from '../icons/LockIcon';
 
 interface SidebarProps {
   sources: DataSource[];
@@ -52,9 +51,6 @@ export default function Sidebar({ sources, isLoading }: SidebarProps) {
                     )}
                   >
                     <span className="truncate font-mono text-xs">{tool.name}</span>
-                    {tool.readonly && (
-                      <LockIcon className="w-3 h-3 ml-auto flex-shrink-0" />
-                    )}
                   </Link>
                 ))}
             </div>

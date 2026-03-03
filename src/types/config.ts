@@ -56,7 +56,6 @@ export interface SourceConfig extends ConnectionParams, SSHConfig {
 export interface ExecuteSqlToolConfig {
   name: "execute_sql"; // Must match BUILTIN_TOOL_EXECUTE_SQL from builtin-tools.ts
   source: string;
-  readonly?: boolean;
   max_rows?: number;
 }
 

@@ -127,11 +127,6 @@ export interface components {
             /** @description Tool input parameters */
             parameters: components["schemas"]["ToolParameter"][];
             /**
-             * @description Whether the tool is restricted to read-only operations (execute_sql only)
-             * @example true
-             */
-            readonly?: boolean;
-            /**
              * @description Maximum number of rows returned by SELECT queries (execute_sql only)
              * @example 1000
              */

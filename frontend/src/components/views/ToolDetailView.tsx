@@ -5,7 +5,6 @@ import { executeTool } from '../../api/tools';
 import { ApiError } from '../../api/errors';
 import type { Tool } from '../../types/datasource';
 import { SqlEditor, RunButton, ResultsTabs, type ResultTab, type SqlEditorHandle } from '../tool';
-import LockIcon from '../icons/LockIcon';
 import CopyIcon from '../icons/CopyIcon';
 import CheckIcon from '../icons/CheckIcon';
 
@@ -182,12 +181,6 @@ export default function ToolDetailView() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-foreground font-mono">{tool.name}</h1>
-            {tool.readonly && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
-                <LockIcon className="w-3 h-3" />
-                Read-Only
-              </span>
-            )}
           </div>
           <p className="text-muted-foreground leading-relaxed">{tool.description}</p>
           <div className="border border-border rounded-lg bg-card p-8 text-center">
@@ -207,12 +200,6 @@ export default function ToolDetailView() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-foreground font-mono">{tool.name}</h1>
-            {tool.readonly && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
-                <LockIcon className="w-3 h-3" />
-                Read-Only
-              </span>
-            )}
           </div>
           <p className="text-muted-foreground leading-relaxed">{tool.description}</p>
         </div>

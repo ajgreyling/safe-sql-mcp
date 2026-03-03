@@ -271,7 +271,6 @@ dsn = "postgres://user:pass@localhost:5432/db"
       const tomlContent = `
 [[sources]]
 id = "invalid"
-readonly = true
 `;
       fs.writeFileSync(path.join(tempDir, 'dbhub.toml'), tomlContent);
 
@@ -1200,22 +1199,6 @@ description = "Not allowed"
       fs.writeFileSync(path.join(tempDir, 'dbhub.toml'), tomlContent);
 
       expect(() => loadTomlConfig()).toThrow(/cannot have description, statement, or parameters fields/);
-    });
-
-    it('should throw for tool with readonly = false (fork is unconditionally read-only)', () => {
-      const tomlContent = `
-[[sources]]
-id = "test_db"
-dsn = "postgres://user:pass@localhost:5432/testdb"
-
-[[tools]]
-name = "execute_sql"
-source = "test_db"
-readonly = false
-`;
-      fs.writeFileSync(path.join(tempDir, 'dbhub.toml'), tomlContent);
-
-      expect(() => loadTomlConfig()).toThrow(/readonly = false.*unconditionally read-only/);
     });
 
     it('should throw for execute_sql with invalid max_rows', () => {

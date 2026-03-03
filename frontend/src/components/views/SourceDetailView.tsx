@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
 import { fetchSource } from '../../api/sources';
 import { ApiError } from '../../api/errors';
 import type { DataSource } from '../../types/datasource';
@@ -195,9 +194,6 @@ export default function SourceDetailView() {
                           <div className="text-sm font-semibold text-foreground font-mono">
                             {tool.name}
                           </div>
-                          {tool.readonly && (
-                            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           ({tool.parameters.length} {tool.parameters.length === 1 ? 'parameter' : 'parameters'})

@@ -16,7 +16,7 @@ Documentation for **capybara-db-mcp** (fork of [DBHub](https://github.com/byteba
 ## Security Model Overview
 
 - **LLM generates SQL** via the MCP client.
-- **Server validates SQL** using read-only SQL validation intended to restrict execution to statements such as SELECT, WITH, EXPLAIN, and SHOW.
+- **Connector is read-only**: Database connections are opened in read-only mode (PostgreSQL: `default_transaction_read_only`; SQLite: readonly file mode). Write attempts fail at the database level.
 - **Query executes** against the configured database.
 - **Results are written locally** to `.safe-sql-results/` and opened in the editor (configurable).
 - **Tool response is metadata-oriented** and is formatted to avoid returning raw query results in the response payload.
@@ -25,7 +25,7 @@ This design reduces the likelihood of transmitting result data to an LLM, but it
 
 ## Controls (risk-reduction)
 
-- **Read-only enforcement**: SQL validation is intended to restrict execution to read-only statements; it reduces the risk of accidental writes but does not replace database-level permissions or RBAC.
+- **Read-only enforcement**: Database connections are opened in read-only mode; write operations (UPDATE, DELETE, INSERT, etc.) fail at the connection level. This reduces the risk of accidental writes but does not replace database-level permissions or RBAC.
 - **Output isolation**: Query results are written to `.safe-sql-results/` and opened in the editor; tool responses return only success/failure metadata (no file paths, row data, row counts, or column names).
 - **Generic errors only**: Execution and search errors return generic messages (e.g. "Execution failed. See server logs for details."); no SQL, parameter values, or database error text are returned to the client.
 - **Log redaction**: Stderr logs never include SQL statements or parameter values; only tool name and status are logged.

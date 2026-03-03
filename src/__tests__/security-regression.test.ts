@@ -1,11 +1,10 @@
 /**
  * Security regression tests for PII-safe hardening.
- * Covers: metadata suppression, generic errors, log redaction, read-only bypass prevention, request API redaction.
+ * Covers: metadata suppression, generic errors, log redaction, request API redaction.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createExecuteSqlToolHandler } from "../tools/execute-sql.js";
 import { createSearchDatabaseObjectsToolHandler } from "../tools/search-objects.js";
-import { isReadOnlySQL } from "../utils/allowed-keywords.js";
 import { createGenericToolErrorResponse } from "../utils/response-formatter.js";
 import { ConnectorManager } from "../connectors/manager.js";
 import { getToolRegistry } from "../tools/registry.js";
@@ -42,7 +41,7 @@ const createMockConnector = (id: ConnectorType = "sqlite"): Connector =>
 describe("Security regression: PII-safe hardening", () => {
   beforeEach(() => {
     vi.mocked(getToolRegistry).mockReturnValue({
-      getBuiltinToolConfig: vi.fn().mockReturnValue({ readonly: true }),
+      getBuiltinToolConfig: vi.fn().mockReturnValue({}),
     } as any);
   });
 
@@ -121,20 +120,6 @@ describe("Security regression: PII-safe hardening", () => {
       expect(calls.join(" ")).not.toContain("secret@example.com");
       expect(calls.some((c) => c.includes("[execute_sql] Execution failed"))).toBe(true);
       spy.mockRestore();
-    });
-  });
-
-  describe("read-only bypass prevention", () => {
-    it("rejects WITH CTE containing DELETE", () => {
-      expect(
-        isReadOnlySQL("WITH x AS (DELETE FROM users RETURNING id) SELECT * FROM x", "postgres")
-      ).toBe(false);
-    });
-    it("rejects EXPLAIN ANALYZE DELETE", () => {
-      expect(isReadOnlySQL("EXPLAIN ANALYZE DELETE FROM users", "postgres")).toBe(false);
-    });
-    it("rejects SELECT INTO OUTFILE (MySQL)", () => {
-      expect(isReadOnlySQL("SELECT * FROM t INTO OUTFILE '/tmp/x'", "mysql")).toBe(false);
     });
   });
 
